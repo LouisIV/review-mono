@@ -120,9 +120,9 @@ func (c Client) SetDescription(repo string, session models.Session, body string)
 	return out, err
 }
 
-func (c Client) GenerateDescription(repo string, session models.Session, prompt string) (models.Description, error) {
+func (c Client) GenerateDescription(repo string, session models.Session, prompt, provider string) (models.Description, error) {
 	var out models.Description
-	err := c.do(http.MethodPost, fmt.Sprintf("/session/%s/description/generate?repo=%s", session.ID, url.QueryEscape(repo)), map[string]string{"prompt": prompt}, &out)
+	err := c.do(http.MethodPost, fmt.Sprintf("/session/%s/description/generate?repo=%s", session.ID, url.QueryEscape(repo)), map[string]string{"prompt": prompt, "provider": provider}, &out)
 	return out, err
 }
 
