@@ -31,6 +31,10 @@ func Execute(args []string) int {
 	cfg := config.Load()
 	g := globals{repo: ".", port: cfg.DaemonPort}
 	args = parseGlobalFlags(args, &g)
+	if len(args) > 0 && isHelpArg(args[0]) {
+		usage()
+		return 0
+	}
 	if len(args) == 0 {
 		usage()
 		return 1
@@ -52,6 +56,9 @@ func Execute(args []string) int {
 
 func run(args []string, g globals, cfg config.Config) error {
 	switch args[0] {
+	case "help":
+		usage()
+		return nil
 	case "daemon":
 		return daemonCmd(args[1:], g, cfg)
 	case "open":
@@ -389,7 +396,12 @@ func commentDelete(args []string, g globals) error {
 func describeCmd(args []string, g globals) error {
 	printOnly := false
 	prompt := ""
+	provider := ""
 	for i := 0; i < len(args); i++ {
+		if isHelpArg(args[i]) {
+			describeUsage()
+			return nil
+		}
 		if args[i] == "--print" {
 			printOnly = true
 		}
@@ -397,12 +409,16 @@ func describeCmd(args []string, g globals) error {
 			prompt = args[i+1]
 			i++
 		}
+		if args[i] == "--provider" && i+1 < len(args) {
+			provider = args[i+1]
+			i++
+		}
 	}
 	session, repo, c, err := current(g)
 	if err != nil {
 		return err
 	}
-	desc, err := c.GenerateDescription(repo.Path, session, prompt)
+	desc, err := c.GenerateDescription(repo.Path, session, prompt, provider)
 	if err != nil {
 		return err
 	}
@@ -580,6 +596,10 @@ func parseGlobalFlags(args []string, g *globals) []string {
 	return out
 }
 
+func isHelpArg(arg string) bool {
+	return arg == "help" || arg == "--help" || arg == "-h"
+}
+
 func ensureDaemon(port int) error {
 	c := client.New(port)
 	if c.Health() == nil {
@@ -743,4 +763,11 @@ func truncate(s string, max int) string {
 func usage() {
 	fmt.Println("review <command> [flags]")
 	fmt.Println("commands: daemon, open, status, close, diff, commits, comment, describe, description, approve, request-changes, watch")
+	fmt.Println("global flags: --repo <path>, --port <port>, --json")
+	fmt.Println("run 'review <command> --help' for command-specific help")
+}
+
+func describeUsage() {
+	fmt.Println("review describe [--print] [--prompt <text>] [--provider <provider>]")
+	fmt.Println("providers: auto, anthropic, claude-cli, codex-cli, fallback")
 }

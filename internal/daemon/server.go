@@ -334,7 +334,8 @@ func (s *Server) description(w http.ResponseWriter, r *http.Request, repo git.Re
 	}
 	if len(parts) >= 4 && parts[3] == "generate" && r.Method == http.MethodPost {
 		var req struct {
-			Prompt string `json:"prompt"`
+			Prompt   string `json:"prompt"`
+			Provider string `json:"provider"`
 		}
 		_ = readJSON(r, &req)
 		raw, err := repo.RawDiff(session.Base)
@@ -342,7 +343,11 @@ func (s *Server) description(w http.ResponseWriter, r *http.Request, repo git.Re
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		body, err := ai.GenerateDescription(s.cfg.AnthropicAPIKey, s.cfg.AIProvider, raw, req.Prompt)
+		provider := s.cfg.AIProvider
+		if req.Provider != "" {
+			provider = req.Provider
+		}
+		body, err := ai.GenerateDescription(s.cfg.AnthropicAPIKey, provider, raw, req.Prompt)
 		if err != nil {
 			writeError(w, http.StatusBadGateway, err.Error())
 			return
