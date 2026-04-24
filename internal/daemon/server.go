@@ -342,7 +342,7 @@ func (s *Server) description(w http.ResponseWriter, r *http.Request, repo git.Re
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		body, err := ai.GenerateDescription(s.cfg.AnthropicAPIKey, raw, req.Prompt)
+		body, err := ai.GenerateDescription(s.cfg.AnthropicAPIKey, s.cfg.AIProvider, raw, req.Prompt)
 		if err != nil {
 			writeError(w, http.StatusBadGateway, err.Error())
 			return

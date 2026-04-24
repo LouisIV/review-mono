@@ -2,22 +2,55 @@ package ai
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 	"strings"
+	"time"
 )
 
-func GenerateDescription(apiKey, diff, prompt string) (string, error) {
-	if strings.TrimSpace(apiKey) == "" {
+func GenerateDescription(apiKey, provider, diff, prompt string) (string, error) {
+	userPrompt := descriptionPrompt(diff, prompt)
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "", "auto":
+		if strings.TrimSpace(apiKey) != "" {
+			return generateWithAnthropicAPI(apiKey, userPrompt)
+		}
+		if out, err := generateWithCLI("claude-cli", userPrompt); err == nil {
+			return out, nil
+		}
+		if out, err := generateWithCLI("codex-cli", userPrompt); err == nil {
+			return out, nil
+		}
 		return fallbackDescription(diff), nil
+	case "anthropic", "anthropic-api", "claude-api":
+		if strings.TrimSpace(apiKey) == "" {
+			return "", fmt.Errorf("anthropic api key is required for provider %q", provider)
+		}
+		return generateWithAnthropicAPI(apiKey, userPrompt)
+	case "claude", "claude-cli":
+		return generateWithCLI("claude-cli", userPrompt)
+	case "codex", "codex-cli":
+		return generateWithCLI("codex-cli", userPrompt)
+	case "fallback":
+		return fallbackDescription(diff), nil
+	default:
+		return "", fmt.Errorf("unknown ai provider %q", provider)
 	}
+}
+
+func descriptionPrompt(diff, prompt string) string {
 	userPrompt := "Write a concise merge request description for this diff. Include a summary and test notes if evident."
 	if prompt != "" {
 		userPrompt += "\nAdditional guidance: " + prompt
 	}
-	userPrompt += "\n\nDiff:\n" + truncate(diff, 120000)
+	return userPrompt + "\n\nDiff:\n" + truncate(diff, 120000)
+}
+
+func generateWithAnthropicAPI(apiKey, userPrompt string) (string, error) {
 	payload := map[string]any{
 		"model":      "claude-3-5-sonnet-20241022",
 		"max_tokens": 1200,
@@ -58,6 +91,43 @@ func GenerateDescription(apiKey, diff, prompt string) (string, error) {
 		}
 	}
 	return strings.TrimSpace(out.String()) + "\n", nil
+}
+
+func generateWithCLI(provider, prompt string) (string, error) {
+	var name string
+	var args []string
+	switch provider {
+	case "claude-cli":
+		name = "claude"
+		args = []string{"--print", "--input-format", "text", "--output-format", "text", "--no-session-persistence"}
+	case "codex-cli":
+		name = "codex"
+		args = []string{"exec", "--sandbox", "read-only", "--ask-for-approval", "never", "--ephemeral", "-"}
+	default:
+		return "", fmt.Errorf("unknown cli provider %q", provider)
+	}
+	if _, err := exec.LookPath(name); err != nil {
+		return "", err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, name, args...)
+	cmd.Stdin = strings.NewReader(prompt)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		if msg != "" {
+			return "", fmt.Errorf("%s failed: %w: %s", name, err, msg)
+		}
+		return "", fmt.Errorf("%s failed: %w", name, err)
+	}
+	out := strings.TrimSpace(stdout.String())
+	if out == "" {
+		return "", fmt.Errorf("%s returned empty output", name)
+	}
+	return out + "\n", nil
 }
 
 func fallbackDescription(diff string) string {
