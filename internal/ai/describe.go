@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -99,10 +100,10 @@ func generateWithCLI(provider, prompt string) (string, error) {
 	switch provider {
 	case "claude-cli":
 		name = "claude"
-		args = []string{"--print", "--input-format", "text", "--output-format", "text", "--no-session-persistence"}
+		args = []string{"--print", "--input-format", "text", "--output-format", "stream-json", "--no-session-persistence"}
 	case "codex-cli":
 		name = "codex"
-		args = []string{"exec", "--sandbox", "read-only", "--ask-for-approval", "never", "--ephemeral", "-"}
+		args = []string{"exec", "--sandbox", "read-only", "--ask-for-approval", "never", "--ephemeral", "--json", "-"}
 	default:
 		return "", fmt.Errorf("unknown cli provider %q", provider)
 	}
@@ -123,11 +124,79 @@ func generateWithCLI(provider, prompt string) (string, error) {
 		}
 		return "", fmt.Errorf("%s failed: %w", name, err)
 	}
-	out := strings.TrimSpace(stdout.String())
+	out := strings.TrimSpace(streamedCLIOutput(provider, stdout.Bytes()))
 	if out == "" {
 		return "", fmt.Errorf("%s returned empty output", name)
 	}
 	return out + "\n", nil
+}
+
+func streamedCLIOutput(provider string, data []byte) string {
+	var result string
+	var fragments []string
+	scanner := bufio.NewScanner(bytes.NewReader(data))
+	scanner.Buffer(make([]byte, 0, 64*1024), 10*1024*1024)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		if provider == "claude-cli" {
+			if text := claudeStreamText([]byte(line)); text != "" {
+				result = text
+			}
+			continue
+		}
+		if provider == "codex-cli" {
+			if text := codexStreamText([]byte(line)); text != "" {
+				fragments = append(fragments, text)
+			}
+		}
+	}
+	if provider == "codex-cli" && len(fragments) > 0 {
+		return strings.Join(fragments, "")
+	}
+	if result != "" {
+		return result
+	}
+	return string(data)
+}
+
+func claudeStreamText(line []byte) string {
+	var event struct {
+		Type    string `json:"type"`
+		Subtype string `json:"subtype"`
+		Result  string `json:"result"`
+	}
+	if err := json.Unmarshal(line, &event); err != nil {
+		return ""
+	}
+	if event.Type == "result" || event.Subtype == "success" {
+		return event.Result
+	}
+	return ""
+}
+
+func codexStreamText(line []byte) string {
+	var event struct {
+		Msg  string `json:"msg"`
+		Type string `json:"type"`
+		Item struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"item"`
+		Delta string `json:"delta"`
+	}
+	if err := json.Unmarshal(line, &event); err != nil {
+		return ""
+	}
+	if event.Type == "agent_message_delta" || event.Msg == "agent_message_delta" {
+		return event.Delta
+	}
+	if event.Item.Type == "message" || event.Item.Type == "assistant_message" {
+		return event.Item.Text
+	}
+	return ""
 }
 
 func fallbackDescription(diff string) string {
