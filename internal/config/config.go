@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	AnthropicAPIKey      string `json:"anthropic_api_key"`
+	AIProvider           string `json:"ai_provider"`
 	DefaultBaseBranch    string `json:"default_base_branch"`
 	DaemonPort           int    `json:"daemon_port"`
 	OpenBrowserOnApprove bool   `json:"open_browser_on_approve"`
@@ -17,6 +18,7 @@ type Config struct {
 
 func Default() Config {
 	return Config{
+		AIProvider:           "auto",
 		DefaultBaseBranch:    "main",
 		DaemonPort:           7080,
 		OpenBrowserOnApprove: true,
@@ -33,6 +35,9 @@ func Load() Config {
 	}
 	if key := os.Getenv("ANTHROPIC_API_KEY"); key != "" {
 		cfg.AnthropicAPIKey = key
+	}
+	if provider := os.Getenv("REVIEW_AI_PROVIDER"); provider != "" {
+		cfg.AIProvider = provider
 	}
 	return cfg
 }
