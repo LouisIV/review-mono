@@ -1,0 +1,57 @@
+version: "3"
+
+vars:
+  BINARY: review
+  BUILD_DIR: bin
+
+tasks:
+  default:
+    desc: Build the review CLI
+    deps:
+      - build
+
+  test:
+    desc: Run the Go test suite
+    cmds:
+      - GOCACHE="${GOCACHE:-/tmp/review-go-cache}" go test ./...
+
+  build:
+    desc: Build the review CLI into ./bin
+    cmds:
+      - mkdir -p "{{.BUILD_DIR}}"
+      - GOCACHE="${GOCACHE:-/tmp/review-go-cache}" go build -o "{{.BUILD_DIR}}/{{.BINARY}}" .
+    sources:
+      - "**/*.go"
+      - go.mod
+    generates:
+      - "{{.BUILD_DIR}}/{{.BINARY}}"
+
+  install:
+    desc: Install the review CLI, defaulting to $HOME/.local/bin
+    deps:
+      - build
+    cmds:
+      - mkdir -p "${INSTALL_DIR:-$HOME/.local/bin}"
+      - install -m 0755 "{{.BUILD_DIR}}/{{.BINARY}}" "${INSTALL_DIR:-$HOME/.local/bin}/{{.BINARY}}"
+      - echo "Installed {{.BINARY}} to ${INSTALL_DIR:-$HOME/.local/bin}/{{.BINARY}}"
+
+  uninstall:
+    desc: Remove the installed review CLI
+    cmds:
+      - rm -f "${INSTALL_DIR:-$HOME/.local/bin}/{{.BINARY}}"
+      - echo "Removed ${INSTALL_DIR:-$HOME/.local/bin}/{{.BINARY}}"
+
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - rm -rf "{{.BUILD_DIR}}"
+
+  run:
+    desc: Run the CLI via go run; pass args with `task run -- open`
+    cmds:
+      - GOCACHE="${GOCACHE:-/tmp/review-go-cache}" go run . {{.CLI_ARGS}}
+
+  daemon:
+    desc: Run the daemon in the foreground
+    cmds:
+      - GOCACHE="${GOCACHE:-/tmp/review-go-cache}" go run . daemon run {{.CLI_ARGS}}
