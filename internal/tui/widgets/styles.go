@@ -9,7 +9,7 @@ var (
 	activeStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("230")).Background(lipgloss.Color("57"))
 	addStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
 	removeStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("203"))
-	hunkStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("105"))
+	hunkStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("242"))
 	commentStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
 	searchStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("16")).Background(lipgloss.Color("220"))
 )
