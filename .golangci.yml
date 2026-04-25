@@ -1,0 +1,43 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: all
+  # Keep the "all linters" posture, but avoid duplicate/deprecated checks and
+  # repository-policy linters that need project-specific allow/deny lists.
+  disable:
+    - depguard
+    - gomodguard
+    - goheader
+    - importas
+    - wsl
+  settings:
+    lll:
+      line-length: 120
+      tab-width: 1
+    revive:
+      enable-all-rules: true
+      enable-default-rules: true
+      severity: warning
+      rules:
+        - name: file-length-limit
+          severity: error
+          arguments:
+            - max: 500
+              skip-comments: true
+              skip-blank-lines: true
+        - name: line-length-limit
+          arguments:
+            - 120
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
