@@ -83,6 +83,8 @@ func run(args []string, g globals, cfg config.Config) error {
 		return requestChangesCmd(args[1:], g)
 	case "watch":
 		return watchCmd(args[1:], g)
+	case "widget":
+		return widgetCmd(args[1:], g)
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
@@ -319,7 +321,7 @@ func usage() {
 	fmt.Println("review <command> [flags]")
 	fmt.Println(
 		"commands: daemon, open, status, close, diff, commits, comment, describe, " +
-			"description, approve, request-changes, watch",
+			"description, approve, request-changes, watch, widget",
 	)
 	fmt.Println("global flags: --repo <path>, --port <port>, --json")
 	fmt.Println("run 'review <command> --help' for command-specific help")
