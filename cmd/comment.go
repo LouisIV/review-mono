@@ -10,8 +10,10 @@ import (
 )
 
 func commentCmd(args []string, g globals) error {
-	if len(args) == 0 {
-		return errors.New("comment subcommand required")
+	if len(args) == 0 || isHelpArg(args[0]) {
+		commentUsage()
+
+		return nil
 	}
 
 	switch args[0] {
@@ -29,6 +31,12 @@ func commentCmd(args []string, g globals) error {
 }
 
 func commentAdd(args []string, g globals) error {
+	if len(args) > 0 && isHelpArg(args[0]) {
+		commentAddUsage()
+
+		return nil
+	}
+
 	author := models.AuthorHuman
 	pos := []string{}
 
@@ -74,6 +82,12 @@ func commentAdd(args []string, g globals) error {
 }
 
 func commentList(args []string, g globals) error {
+	if len(args) > 0 && isHelpArg(args[0]) {
+		commentListUsage()
+
+		return nil
+	}
+
 	filters := url.Values{}
 
 	for i := 0; i < len(args); i++ {
@@ -120,6 +134,12 @@ func commentList(args []string, g globals) error {
 }
 
 func commentResolve(args []string, g globals) error {
+	if len(args) > 0 && isHelpArg(args[0]) {
+		commentResolveUsage()
+
+		return nil
+	}
+
 	all := len(args) == 1 && args[0] == "--all"
 	if len(args) == 0 {
 		return errors.New("comment id or --all required")
@@ -160,6 +180,12 @@ func commentResolve(args []string, g globals) error {
 }
 
 func commentDelete(args []string, g globals) error {
+	if len(args) > 0 && isHelpArg(args[0]) {
+		commentDeleteUsage()
+
+		return nil
+	}
+
 	if len(args) != 1 {
 		return errors.New("comment id required")
 	}
@@ -180,4 +206,31 @@ func commentDelete(args []string, g globals) error {
 	}
 
 	return nil
+}
+
+func commentUsage() {
+	fmt.Println("review comment <subcommand> [flags]")
+	fmt.Println("subcommands: add, list, resolve, delete")
+	fmt.Println("run 'review comment <subcommand> --help' for details")
+}
+
+func commentAddUsage() {
+	fmt.Println("review comment add [--author <author>] <file:line> <body>")
+	fmt.Println("adds an inline comment to the current review session")
+}
+
+func commentListUsage() {
+	fmt.Println("review comment list [--unresolved] [--file <path>] [--author <author>]")
+	fmt.Println("lists comments in the current review session")
+}
+
+func commentResolveUsage() {
+	fmt.Println("review comment resolve <comment-id>")
+	fmt.Println("review comment resolve --all")
+	fmt.Println("marks one or all unresolved comments as resolved")
+}
+
+func commentDeleteUsage() {
+	fmt.Println("review comment delete <comment-id>")
+	fmt.Println("deletes a comment from the current review session")
 }
