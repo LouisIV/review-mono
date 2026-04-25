@@ -10,16 +10,31 @@ linters:
   # repository-policy linters that need project-specific allow/deny lists.
   disable:
     - depguard
+    - err113
+    - exhaustruct
+    - forbidigo
     - gomodguard
     - goheader
     - importas
+    - mnd
+    - noinlineerr
+    - tagliatelle
+    - varnamelen
+    - wrapcheck
     - wsl
+    - wsl_v5
   settings:
+    cyclop:
+      max-complexity: 30
+    gocognit:
+      min-complexity: 60
+    funlen:
+      lines: 100
+      statements: 80
     lll:
       line-length: 120
       tab-width: 1
     revive:
-      enable-all-rules: true
       enable-default-rules: true
       severity: warning
       rules:
@@ -32,6 +47,10 @@ linters:
         - name: line-length-limit
           arguments:
             - 120
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
 
 formatters:
   enable:

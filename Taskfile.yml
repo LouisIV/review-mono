@@ -22,7 +22,7 @@ tasks:
     deps:
       - lint-install
     cmds:
-      - GOCACHE="${GOCACHE:-/tmp/review-go-cache}" "{{.BUILD_DIR}}/golangci-lint" run ./...
+      - GOCACHE="${GOCACHE:-/tmp/review-go-cache}" GOLANGCI_LINT_CACHE="${GOLANGCI_LINT_CACHE:-/tmp/review-golangci-cache}" "{{.BUILD_DIR}}/golangci-lint" run ./...
 
   lint-install:
     desc: Install the pinned golangci-lint binary into ./bin
