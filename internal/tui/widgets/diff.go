@@ -89,23 +89,24 @@ func (w Diff) renderLine(row diffRow) string {
 	oldLine := fmt.Sprintf("%4d", row.Line)
 	newLine := fmt.Sprintf("%4d", row.Line)
 	sign := " "
-	style := lipgloss.NewStyle()
+	signStyle := lipgloss.NewStyle()
 
 	switch row.Kind {
 	case "add":
 		oldLine = lineNumBlank
 		sign = "+"
-		style = addStyle
+		signStyle = addStyle
 	case "remove":
 		newLine = lineNumBlank
 		sign = "-"
-		style = removeStyle
+		signStyle = removeStyle
 	}
 
-	content := highlight(strings.ReplaceAll(row.Content, "\t", lineNumBlank), w.props.Query)
+	raw := strings.ReplaceAll(row.Content, "\t", lineNumBlank)
+	content := renderSyntaxLine(w.props.ActiveFile, raw, w.props.Query)
 	comment := w.commentBadge(row.Line)
 	gutter := mutedStyle.Render(fmt.Sprintf("%s %s %s", marker, oldLine, newLine))
-	rendered := fmt.Sprintf("%s  %s %s%s", gutter, style.Render(sign), style.Render(content), comment)
+	rendered := fmt.Sprintf("%s  %s %s%s", gutter, signStyle.Render(sign), content, comment)
 
 	if row.Line == w.props.SelectedLine {
 		return selectedLineStyle().Render(rendered)

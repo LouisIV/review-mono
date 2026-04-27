@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"review/internal/lsp"
 	"review/internal/models"
 	"review/internal/tui/widgets"
 )
@@ -220,6 +221,26 @@ func (m *model) currentComment() models.Comment {
 	return models.Comment{}
 }
 
+func (m *model) requestHover() (tea.Model, tea.Cmd) {
+	file := m.currentFile()
+	line := m.currentLine()
+
+	if file == "" || line == 0 {
+		m.status = "select a diff line to inspect"
+
+		return m, nil
+	}
+
+	if m.lspManager == nil {
+		m.lspManager = lsp.NewManager(m.opts.RepoPath)
+	}
+
+	m.mode = modeHover
+	m.hoverInfo = "fetching hover info…"
+
+	return m, loadHover(m.opts, m.lspManager, file, line)
+}
+
 func (m *model) openContext() {
 	var target string
 	switch {
@@ -316,6 +337,8 @@ func (m *model) bottomTitle() string {
 		return "Confirm"
 	case modeHelp:
 		return "Help"
+	case modeHover:
+		return "Hover Info"
 	default:
 		return "Comments"
 	}
@@ -327,7 +350,7 @@ func (m *model) bottomHeight() int {
 		return 11
 	case modeRequestChanges:
 		return 8
-	case modeDescription, modeHelp:
+	case modeDescription, modeHelp, modeHover:
 		return 9
 	default:
 		return 0
@@ -351,10 +374,13 @@ func (m *model) bottomBody() string {
 			"Press y to approve or n/Esc to cancel."
 	case modeConfirmRequest:
 		return "Mark this review as changes requested?\nPress y to request changes or n/Esc to cancel."
+	case modeHover:
+		return m.hoverInfo
 	case modeHelp:
 		return "j/k move lines, J/K move hunks, [/]/next/previous file, f file picker, " +
 			"/ search, n/N search results, v visual selection, c comment, r resolve, " +
-			"d show description, g generate description, a approve, x request changes, Space context menu."
+			"d show description, g generate description, a approve, x request changes, " +
+			"i hover info (LSP), Space context menu."
 	default:
 		target := m.commentTarget()
 		if target != ":" && target != "" {

@@ -47,7 +47,7 @@ func (m *model) handleKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleConfirmKey(key)
 	case modeContext:
 		return m.handleContextKey(key)
-	case modeHelp, modeDescription:
+	case modeHelp, modeDescription, modeHover:
 		if key.String() == keyEsc || key.String() == "q" || key.String() == "?" {
 			m.mode = modeReview
 		}
@@ -149,6 +149,8 @@ func (m *model) handleReviewKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.mode = modeRequestChanges
 		m.request.SetValue("")
 		m.request.Focus()
+	case "i":
+		return m.requestHover()
 	case " ":
 		m.openContext()
 	}
