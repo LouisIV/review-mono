@@ -83,6 +83,10 @@ func run(args []string, g globals, cfg config.Config) error {
 		return requestChangesCmd(args[1:], g)
 	case "watch":
 		return watchCmd(args[1:], g)
+	case "tui":
+		return tuiCmd(args[1:], g, cfg)
+	case "widget":
+		return widgetCmd(args[1:], g)
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
 	}
@@ -317,12 +321,42 @@ func commitsCmd(g globals) error {
 
 func usage() {
 	fmt.Println("review <command> [flags]")
-	fmt.Println(
-		"commands: daemon, open, status, close, diff, commits, comment, describe, " +
-			"description, approve, request-changes, watch",
-	)
-	fmt.Println("global flags: --repo <path>, --port <port>, --json")
+	fmt.Println()
+	fmt.Println("Commands:")
+	for _, command := range rootCommands() {
+		fmt.Printf("  %-16s %s\n", command.name, command.summary)
+	}
+	fmt.Println()
+	fmt.Println("Global flags:")
+	fmt.Println("  --repo <path>      repository path (default .)")
+	fmt.Println("  --port <port>      daemon port")
+	fmt.Println("  --json             print machine-readable JSON")
+	fmt.Println()
 	fmt.Println("run 'review <command> --help' for command-specific help")
+}
+
+type commandHelp struct {
+	name    string
+	summary string
+}
+
+func rootCommands() []commandHelp {
+	return []commandHelp{
+		{name: "daemon", summary: "run, start, stop, or inspect the local daemon"},
+		{name: "open", summary: "open a review session for the current branch"},
+		{name: "status", summary: "show the current review session summary"},
+		{name: "close", summary: "close the current review session"},
+		{name: "diff", summary: "print the review diff"},
+		{name: "commits", summary: "list commits included in the review"},
+		{name: "comment", summary: "add, list, resolve, or delete review comments"},
+		{name: "describe", summary: "generate an MR description"},
+		{name: "description", summary: "show or edit the saved MR description"},
+		{name: "approve", summary: "push and mark the review approved"},
+		{name: "request-changes", summary: "mark the review as changes requested"},
+		{name: "watch", summary: "stream review daemon events"},
+		{name: "tui", summary: "open the keyboard-first review interface"},
+		{name: "widget", summary: "render or interact with TUI widget demos"},
+	}
 }
 
 func describeUsage() {

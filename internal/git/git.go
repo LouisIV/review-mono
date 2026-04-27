@@ -75,7 +75,7 @@ func (r Repo) Commits(base string) ([]models.Commit, error) {
 
 	var commits []models.Commit
 
-	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(out), "\n") {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
