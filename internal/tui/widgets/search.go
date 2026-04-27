@@ -51,7 +51,9 @@ func (w Search) View() string {
 		}
 	}
 
-	status := mutedStyle.Render(fmt.Sprintf("%d matches in %s  Enter next  n/N cycle  Esc close", matches, w.props.ActiveFile))
+	status := mutedStyle.Render(fmt.Sprintf(
+		"%d matches in %s  Enter next  n/N cycle  Esc close", matches, w.props.ActiveFile,
+	))
 	content := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render("Search"), w.input.View(), status, w.diff.View())
 
 	return borderStyle.Width(w.props.Width).Render(content)

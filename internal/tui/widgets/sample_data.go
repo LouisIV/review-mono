@@ -59,7 +59,10 @@ var diffRows = []diffRow{
 }
 
 var comments = []commentRow{
-	{ID: "C-102a", File: "cmd/root.go", Line: 83, Body: "This is a good place for the widget playground command.", Resolved: false},
-	{ID: "C-7f31", File: "internal/tui/diff_view.go", Line: 42, EndLine: 47, Body: "Range comments should use the visual selection bounds.", Resolved: false},
-	{ID: "C-8b20", File: "docs/tui-review.md", Line: 118, Body: "Resolved after moving file navigation off n/N.", Resolved: true},
+	{ID: "C-102a", File: "cmd/root.go", Line: 83,
+		Body: "This is a good place for the widget playground command.", Resolved: false},
+	{ID: "C-7f31", File: "internal/tui/diff_view.go", Line: 42, EndLine: 47,
+		Body: "Range comments should use the visual selection bounds.", Resolved: false},
+	{ID: "C-8b20", File: "docs/tui-review.md", Line: 118,
+		Body: "Resolved after moving file navigation off n/N.", Resolved: true},
 }

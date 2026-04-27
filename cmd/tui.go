@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"review/internal/client"
@@ -18,7 +19,7 @@ func tuiCmd(args []string, g globals, cfg config.Config) error {
 		switch args[i] {
 		case "--base":
 			if i+1 >= len(args) {
-				return fmt.Errorf("--base requires a branch")
+				return errors.New("--base requires a branch")
 			}
 			base = args[i+1]
 			i++
@@ -65,8 +66,9 @@ func currentSessionOrOpen(repo git.Repo, c client.Client, base string) (models.S
 	}
 
 	for i := len(sessions) - 1; i >= 0; i-- {
-		if sessions[i].Repo == repo.Path && sessions[i].Branch == branch && sessions[i].Status != models.StatusApproved {
-			return sessions[i], nil
+		s := sessions[i]
+		if s.Repo == repo.Path && s.Branch == branch && s.Status != models.StatusApproved {
+			return s, nil
 		}
 	}
 

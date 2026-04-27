@@ -275,7 +275,7 @@ func fallbackDescription(diff string) string {
 	adds := 0
 	dels := 0
 
-	for _, line := range strings.Split(diff, "\n") {
+	for line := range strings.SplitSeq(diff, "\n") {
 		if strings.HasPrefix(line, "diff --git ") {
 			files++
 		}

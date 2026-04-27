@@ -2,6 +2,7 @@ package widgets
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -124,10 +125,8 @@ func RenderTree(name string) string {
 }
 
 func ValidateName(name string) error {
-	for _, candidate := range Names() {
-		if name == candidate {
-			return nil
-		}
+	if slices.Contains(Names(), name) {
+		return nil
 	}
 
 	return fmt.Errorf("unknown widget %q", name)

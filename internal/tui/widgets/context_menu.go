@@ -5,6 +5,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const keyDown = "down"
+
 type ContextMenu struct {
 	props Props
 }
@@ -22,7 +24,7 @@ func (w ContextMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch key.String() {
-	case "j", "down":
+	case "j", keyDown:
 		w.props.MenuIndex++
 	case "k", "up":
 		if w.props.MenuIndex > 0 {
@@ -40,7 +42,8 @@ func (w ContextMenu) View() string {
 	}
 
 	idx := w.props.MenuIndex % len(actions)
-	rows := []string{titleStyle.Render("Context: " + w.props.MenuTarget)}
+	rows := make([]string, 0, 1+len(actions))
+	rows = append(rows, titleStyle.Render("Context: "+w.props.MenuTarget))
 	for i, action := range actions {
 		row := "  " + action
 		if i == idx {

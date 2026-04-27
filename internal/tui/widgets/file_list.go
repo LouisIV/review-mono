@@ -20,10 +20,8 @@ func (w FileList) Init() tea.Cmd { return nil }
 func (w FileList) Update(tea.Msg) (tea.Model, tea.Cmd) { return w, nil }
 
 func (w FileList) View() string {
-	rows := []string{
-		titleStyle.Render("Files"),
-		mutedStyle.Render("in_review  5 changed  4 open"),
-	}
+	rows := make([]string, 0, 2+len(files))
+	rows = append(rows, titleStyle.Render("Files"), mutedStyle.Render("in_review  5 changed  4 open"))
 
 	for _, file := range files {
 		prefix := "  "

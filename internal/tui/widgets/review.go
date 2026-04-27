@@ -2,10 +2,13 @@ package widgets
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
+
+const lineNumBlank = "    "
 
 type FileItem struct {
 	Path       string
@@ -67,10 +70,7 @@ func RenderReviewWorkspace(width, height int, data WorkspaceData) string {
 	if width < 90 {
 		leftWidth = 28
 	}
-	rightWidth := width - leftWidth - 1
-	if rightWidth < 30 {
-		rightWidth = 30
-	}
+	rightWidth := max(width-leftWidth-1, 30)
 
 	bottomHeight := 5
 	if height > 32 {
@@ -82,19 +82,22 @@ func RenderReviewWorkspace(width, height int, data WorkspaceData) string {
 
 	// Three bordered regions plus the one-line help footer consume eight rows:
 	// header border/content, body border, bottom border, and help.
-	bodyHeight := height - bottomHeight - 8
-	if bodyHeight < 8 {
-		bodyHeight = 8
-	}
+	bodyHeight := max(height-bottomHeight-8, 8)
 
 	open, resolved := commentCounts(data.Comments)
 	header := titleStyle.Render(data.Branch+" -> "+data.Base) +
-		mutedStyle.Render(fmt.Sprintf("  %s  focus:%s  %d commits  %d files  %d open  %d resolved", data.Status, data.Focus, data.CommitCount, len(data.Files), open, resolved))
+		mutedStyle.Render(fmt.Sprintf(
+			"  %s  focus:%s  %d commits  %d files  %d open  %d resolved",
+			data.Status, data.Focus, data.CommitCount, len(data.Files), open, resolved,
+		))
 	headerBox := fixedBox(width, 1, []string{header})
 	left := renderRuntimeFiles(leftWidth, bodyHeight, data)
 	right := renderRuntimeDiff(rightWidth, bodyHeight, data)
 	bottom := renderRuntimeBottom(width, bottomHeight, data)
-	help := mutedStyle.Render("Tab focus  Files:j/k choose  Diff:j/k line J/K hunk  [/]/file  f goto  / search  v visual  c comment  r resolve  d desc  g gen  a approve  x request  ? help  q quit")
+	help := mutedStyle.Render(
+		"Tab focus  Files:j/k choose  Diff:j/k line J/K hunk  [/]/file  f goto" +
+			"  / search  v visual  c comment  r resolve  d desc  g gen  a approve  x request  ? help  q quit",
+	)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -106,10 +109,8 @@ func RenderReviewWorkspace(width, height int, data WorkspaceData) string {
 }
 
 func renderRuntimeFiles(width, height int, data WorkspaceData) string {
-	rows := []string{
-		titleStyle.Render("Files"),
-		focusLabel(data.Focus == "files", data.Status),
-	}
+	rows := make([]string, 0, 2+len(data.Files))
+	rows = append(rows, titleStyle.Render("Files"), focusLabel(data.Focus == "files", data.Status))
 	for _, file := range data.Files {
 		prefix := "  "
 		if file.Path == data.ActiveFile {
@@ -123,13 +124,10 @@ func renderRuntimeFiles(width, height int, data WorkspaceData) string {
 			state = mutedStyle.Render("v")
 		}
 
-		pathWidth := width - 18
-		if pathWidth < 10 {
-			pathWidth = 10
-		}
+		pathWidth := max(width-18, 10)
 		meta := mutedStyle.Render(fmt.Sprintf("+%d -%d", file.Additions, file.Deletions))
 		if file.Unresolved > 0 {
-			meta += " " + commentStyle.Render(fmt.Sprintf("%d", file.Unresolved))
+			meta += " " + commentStyle.Render(strconv.Itoa(file.Unresolved))
 		}
 
 		row := fmt.Sprintf("%s%s %-*s %s", prefix, state, pathWidth, truncateMiddle(file.Path, pathWidth), meta)
@@ -148,7 +146,8 @@ func renderRuntimeDiff(width, height int, data WorkspaceData) string {
 		title = titleStyle.Render("Diff")
 	}
 	if data.Focus == "diff" {
-		title = activeStyle.Render(" " + lipgloss.NewStyle().Bold(true).Render(stripANSI(data.ActiveFile, "Diff")) + " ")
+		inner := lipgloss.NewStyle().Bold(true).Render(stripANSI(data.ActiveFile, "Diff"))
+		title = activeStyle.Render(" " + inner + " ")
 	}
 
 	rows := []string{title, mutedStyle.Render(strings.Repeat("-", max(0, width-4)))}
@@ -156,10 +155,7 @@ func renderRuntimeDiff(width, height int, data WorkspaceData) string {
 	if data.Top > 0 && data.Top < len(visible) {
 		visible = visible[data.Top:]
 	}
-	maxRows := height - 4
-	if maxRows < 1 {
-		maxRows = 1
-	}
+	maxRows := max(height-4, 1)
 	if len(visible) > maxRows {
 		visible = visible[:maxRows]
 	}
@@ -206,7 +202,7 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 		}
 	}
 
-	line := "    "
+	line := lineNumBlank
 	if row.Line > 0 {
 		line = fmt.Sprintf("%4d", row.Line)
 	}
@@ -227,7 +223,7 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 	} else if data.XOffset >= len(content) {
 		content = ""
 	}
-	content = highlight(strings.ReplaceAll(content, "\t", "    "), data.Query)
+	content = highlight(strings.ReplaceAll(content, "\t", lineNumBlank), data.Query)
 	badge := ""
 	for _, comment := range data.Comments {
 		if comment.File == data.ActiveFile && !comment.Resolved && comment.Line == row.Line {
@@ -236,7 +232,10 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 		}
 	}
 
-	rendered := fmt.Sprintf("%s %s  %s %s%s", marker, mutedStyle.Render(line), style.Render(sign), style.Render(truncateMiddle(content, width-12)), badge)
+	rendered := fmt.Sprintf(
+		"%s %s  %s %s%s",
+		marker, mutedStyle.Render(line), style.Render(sign), style.Render(truncateMiddle(content, width-12)), badge,
+	)
 	if row.Line == data.SelectedLine {
 		return selectedLineStyle().Render(rendered)
 	}
@@ -246,7 +245,8 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 
 func renderRuntimeBottom(width, height int, data WorkspaceData) string {
 	if len(data.Context) > 0 {
-		rows := []string{titleStyle.Render("Context")}
+		rows := make([]string, 0, 1+len(data.Context))
+		rows = append(rows, titleStyle.Render("Context"))
 		for i, action := range data.Context {
 			row := "  " + action
 			if i == data.ContextIndex {
@@ -266,30 +266,37 @@ func renderRuntimeBottom(width, height int, data WorkspaceData) string {
 	if data.BottomBody != "" {
 		rows = append(rows, splitLines(data.BottomBody)...)
 	} else {
-		for _, comment := range data.Comments {
-			if comment.File != data.ActiveFile {
-				continue
-			}
-			if comment.Resolved && !data.ShowResolved {
-				continue
-			}
-			state := commentStyle.Render("open")
-			if comment.Resolved {
-				state = mutedStyle.Render("resolved")
-			}
-			loc := fmt.Sprintf("%s:%d", comment.File, comment.Line)
-			if comment.EndLine > comment.Line {
-				loc = fmt.Sprintf("%s:%d-%d", comment.File, comment.Line, comment.EndLine)
-			}
-			rows = append(rows, fmt.Sprintf("%s  %s  %s", comment.ID, state, loc))
-			rows = append(rows, mutedStyle.Render("  "+comment.Body))
-		}
-		if len(rows) == 1 {
-			rows = append(rows, mutedStyle.Render("No comments for selected file"))
-		}
+		rows = append(rows, renderCommentRows(data)...)
 	}
 
 	return fixedBox(width, height, rows)
+}
+
+func renderCommentRows(data WorkspaceData) []string {
+	var rows []string
+	for _, comment := range data.Comments {
+		if comment.File != data.ActiveFile {
+			continue
+		}
+		if comment.Resolved && !data.ShowResolved {
+			continue
+		}
+		state := commentStyle.Render("open")
+		if comment.Resolved {
+			state = mutedStyle.Render("resolved")
+		}
+		loc := fmt.Sprintf("%s:%d", comment.File, comment.Line)
+		if comment.EndLine > comment.Line {
+			loc = fmt.Sprintf("%s:%d-%d", comment.File, comment.Line, comment.EndLine)
+		}
+		rows = append(rows, fmt.Sprintf("%s  %s  %s", comment.ID, state, loc))
+		rows = append(rows, mutedStyle.Render("  "+comment.Body))
+	}
+	if len(rows) == 0 {
+		rows = append(rows, mutedStyle.Render("No comments for selected file"))
+	}
+
+	return rows
 }
 
 func RenderFilePicker(width int, query string, files []FileItem, cursor int) string {

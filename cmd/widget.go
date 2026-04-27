@@ -114,8 +114,11 @@ func widgetCmd(args []string, _ globals) error {
 }
 
 func widgetUsage() {
-	fmt.Println("review widget <name> [--tree] [--interactive|-I] [--props JSON] [--event name] [--width N] [--height N]")
+	fmt.Println("review widget <name> [--tree] [--interactive|-I]" +
+		" [--props JSON] [--event name] [--width N] [--height N]")
 	fmt.Println("review widget list")
 	fmt.Println("widgets: " + strings.Join(tuidemo.Names(), ", "))
-	fmt.Println("events: comment-line, comment-range, clear-selection, menu-down, menu-up, search-root, search-usage, goto-picker, goto-doc, page-down, page-up, half-page-down, half-page-up, scroll-right, scroll-left")
+	fmt.Println("events: comment-line, comment-range, clear-selection," +
+		" menu-down, menu-up, search-root, search-usage, goto-picker, goto-doc," +
+		" page-down, page-up, half-page-down, half-page-up, scroll-right, scroll-left")
 }

@@ -93,16 +93,16 @@ func (w Diff) renderLine(row diffRow) string {
 
 	switch row.Kind {
 	case "add":
-		oldLine = "    "
+		oldLine = lineNumBlank
 		sign = "+"
 		style = addStyle
 	case "remove":
-		newLine = "    "
+		newLine = lineNumBlank
 		sign = "-"
 		style = removeStyle
 	}
 
-	content := highlight(strings.ReplaceAll(row.Content, "\t", "    "), w.props.Query)
+	content := highlight(strings.ReplaceAll(row.Content, "\t", lineNumBlank), w.props.Query)
 	comment := w.commentBadge(row.Line)
 	gutter := mutedStyle.Render(fmt.Sprintf("%s %s %s", marker, oldLine, newLine))
 	rendered := fmt.Sprintf("%s  %s %s%s", gutter, style.Render(sign), style.Render(content), comment)
@@ -132,12 +132,4 @@ func compactHunk(header string) string {
 
 func selectedLineStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Background(lipgloss.Color("236"))
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-
-	return b
 }

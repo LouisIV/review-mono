@@ -2,6 +2,11 @@ package widgets
 
 import tea "github.com/charmbracelet/bubbletea"
 
+const (
+	menuTargetDiffLine        = "diff-line"
+	menuTargetVisualSelection = "visual-selection"
+)
+
 func ApplyEvent(props Props, event string) Props {
 	props = Normalize(props)
 	switch event {
@@ -50,30 +55,34 @@ func UpdateProps(props Props, msg tea.Msg) Props {
 	case "esc":
 		props.VisualStart = 0
 		props.VisualEnd = 0
-		props.MenuTarget = "diff-line"
+		props.MenuTarget = menuTargetDiffLine
 	case "c":
 		props.VisualStart = 0
 		props.VisualEnd = 0
-		props.MenuTarget = "diff-line"
+		props.MenuTarget = menuTargetDiffLine
 		props.SelectedLine = 83
 	case "v":
 		props.VisualStart = props.SelectedLine
 		props.VisualEnd = props.SelectedLine
-		props.MenuTarget = "visual-selection"
+		props.MenuTarget = menuTargetVisualSelection
 	case "j", "down":
-		if props.MenuTarget == "comment" || props.MenuTarget == "visual-selection" || props.MenuTarget == "file" {
+		switch props.MenuTarget {
+		case "comment", menuTargetVisualSelection, "file":
 			props.MenuIndex++
-		} else if props.VisualStart > 0 {
-			props.VisualEnd++
-		} else {
-			props.SelectedLine++
+		default:
+			if props.VisualStart > 0 {
+				props.VisualEnd++
+			} else {
+				props.SelectedLine++
+			}
 		}
 	case "k", "up":
-		if props.MenuIndex > 0 {
+		switch {
+		case props.MenuIndex > 0:
 			props.MenuIndex--
-		} else if props.VisualEnd > props.VisualStart {
+		case props.VisualEnd > props.VisualStart:
 			props.VisualEnd--
-		} else if props.SelectedLine > 1 {
+		case props.SelectedLine > 1:
 			props.SelectedLine--
 		}
 	case "/":
