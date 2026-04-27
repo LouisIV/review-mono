@@ -26,6 +26,7 @@ func widgetCmd(args []string, _ globals) error {
 	props := tuidemo.DefaultProps()
 	tree := false
 	interactive := false
+	forceColor := false
 	rawProps := ""
 	events := []string{}
 
@@ -35,6 +36,8 @@ func widgetCmd(args []string, _ globals) error {
 			tree = true
 		case "--interactive", "-I":
 			interactive = true
+		case "--force-color":
+			forceColor = true
 		case "--props":
 			if i+1 >= len(args) {
 				return errors.New("--props requires JSON")
@@ -76,6 +79,10 @@ func widgetCmd(args []string, _ globals) error {
 		default:
 			return fmt.Errorf("unknown widget flag %q", args[i])
 		}
+	}
+
+	if forceColor {
+		tuidemo.ForceColor()
 	}
 
 	var err error

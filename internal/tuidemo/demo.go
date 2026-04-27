@@ -5,11 +5,17 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 
 	"review/internal/tui/widgets"
 )
 
 type Props = widgets.Props
+
+func ForceColor() {
+	lipgloss.SetColorProfile(termenv.TrueColor)
+}
 
 func Names() []string {
 	return widgets.Names()
