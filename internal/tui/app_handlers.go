@@ -21,7 +21,7 @@ var ( //nolint:gochecknoglobals
 				Border(lipgloss.NormalBorder()).
 				BorderForeground(lipgloss.Color("240")).
 				Padding(0, 2)
-	commentButtonActiveStyle = commentButtonStyle.Copy().
+	commentButtonActiveStyle = commentButtonStyle.
 					Foreground(lipgloss.Color("230")).
 					Background(lipgloss.Color("57")).
 					BorderForeground(lipgloss.Color("57"))
@@ -268,6 +268,7 @@ func (m *model) composerAtLastInputLine() bool {
 	}
 
 	line := m.composer.LineInfo()
+
 	return line.RowOffset+1 >= line.Height
 }
 
