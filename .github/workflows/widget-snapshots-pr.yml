@@ -58,16 +58,16 @@ jobs:
         if: steps.base-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p base-text base-png
-          for widget in $(NO_COLOR=1 base/bin/review widget list); do
-            NO_COLOR=1 base/bin/review widget "$widget" > "base-text/$widget.txt"
-            base/bin/review widget "$widget" --force-color | freeze --language ansi --output "base-png/$widget.png"
+          for widget in $(base/bin/review widget list); do
+            base/bin/review widget "$widget" --force-color > "base-text/$widget.txt"
+            freeze --language ansi --output "base-png/$widget.png" < "base-text/$widget.txt"
           done
 
       - name: Render PR text snapshots
         run: |
           mkdir -p pr-text
-          for widget in $(NO_COLOR=1 pr/bin/review widget list); do
-            NO_COLOR=1 pr/bin/review widget "$widget" > "pr-text/$widget.txt"
+          for widget in $(pr/bin/review widget list); do
+            pr/bin/review widget "$widget" --force-color > "pr-text/$widget.txt"
           done
 
       - name: Detect changes and upload screenshots
@@ -83,7 +83,7 @@ jobs:
             pr_txt="pr-text/$widget.txt"
 
             if [ ! -f "$base_txt" ] || ! diff -q "$base_txt" "$pr_txt" > /dev/null 2>&1; then
-              pr/bin/review widget "$widget" --force-color | freeze --language ansi --output "pr-png/$widget.png"
+              freeze --language ansi --output "pr-png/$widget.png" < "$pr_txt"
               echo "$widget=$(curl -sS -F 'reqtype=fileupload' -F 'userhash=${{ secrets.CATBOX_USERHASH }}' -F 'fileToUpload=@pr-png/'"$widget"'.png' https://catbox.moe/user/api.php)" >> pr-urls.txt
 
               if [ -f "base-png/$widget.png" ]; then
