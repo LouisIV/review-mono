@@ -72,10 +72,7 @@ func appendTokenSpan(sb *strings.Builder, tv string, pos int, ts lipgloss.Style,
 	}
 
 	// Match part (may be a prefix of tv if match extends past this token).
-	matchLen := matchEnd - pos
-	if matchLen > len(tv) {
-		matchLen = len(tv)
-	}
+	matchLen := min(matchEnd-pos, len(tv))
 	if matchLen > 0 {
 		sb.WriteString(searchStyle.Render(tv[:matchLen]))
 		tv = tv[matchLen:]

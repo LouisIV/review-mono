@@ -19,7 +19,7 @@ func commentCmd(args []string, g globals) error {
 	switch args[0] {
 	case "add":
 		return commentAdd(args[1:], g)
-	case "list":
+	case subcommandList:
 		return commentList(args[1:], g)
 	case "resolve":
 		return commentResolve(args[1:], g)

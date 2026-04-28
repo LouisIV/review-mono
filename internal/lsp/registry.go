@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -167,10 +168,8 @@ var Registry = []ServerDef{ //nolint:gochecknoglobals
 func DefForFile(filename string) *ServerDef {
 	ext := strings.ToLower(filepath.Ext(filename))
 	for i := range Registry {
-		for _, e := range Registry[i].Extensions {
-			if e == ext {
-				return &Registry[i]
-			}
+		if slices.Contains(Registry[i].Extensions, ext) {
+			return &Registry[i]
 		}
 	}
 

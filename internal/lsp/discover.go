@@ -94,12 +94,13 @@ func editorExtRoots() []editorRoot {
 		return nil
 	}
 
-	candidates := []editorRoot{
-		{filepath.Join(home, ".vscode", "extensions"), "vscode"},
-		{filepath.Join(home, ".cursor", "extensions"), "cursor"},
-		{filepath.Join(home, ".windsurf", "extensions"), "windsurf"},
-		{filepath.Join(home, ".vscode-oss", "extensions"), "vscode-oss"},
-	}
+	candidates := make([]editorRoot, 0, 5)
+	candidates = append(candidates,
+		editorRoot{filepath.Join(home, ".vscode", "extensions"), "vscode"},
+		editorRoot{filepath.Join(home, ".cursor", "extensions"), "cursor"},
+		editorRoot{filepath.Join(home, ".windsurf", "extensions"), "windsurf"},
+		editorRoot{filepath.Join(home, ".vscode-oss", "extensions"), "vscode-oss"},
+	)
 
 	// code-server uses XDG_DATA_HOME when set.
 	dataHome := os.Getenv("XDG_DATA_HOME")

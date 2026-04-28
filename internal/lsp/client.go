@@ -2,7 +2,9 @@ package lsp
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -32,7 +34,7 @@ type Client struct {
 // Start spawns the language server identified by args and begins reading its
 // stdout in a background goroutine.  The caller must call Shutdown when done.
 func Start(args []string) (*Client, error) {
-	cmd := exec.Command(args[0], args[1:]...) //nolint:gosec
+	cmd := exec.CommandContext(context.Background(), args[0], args[1:]...) //nolint:gosec
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, fmt.Errorf("lsp: stdin pipe: %w", err)
@@ -210,7 +212,7 @@ func (c *Client) readResponseFor(id int) (*ResponseMessage, error) {
 		select {
 		case raw, ok := <-c.msgs:
 			if !ok {
-				return nil, fmt.Errorf("lsp: server closed")
+				return nil, errors.New("lsp: server closed")
 			}
 
 			var peek struct {
@@ -229,7 +231,7 @@ func (c *Client) readResponseFor(id int) (*ResponseMessage, error) {
 			return &resp, nil
 
 		case <-timeout:
-			return nil, fmt.Errorf("lsp: request timed out")
+			return nil, errors.New("lsp: request timed out")
 		}
 	}
 }
@@ -247,8 +249,8 @@ func readLSPMessage(r *bufio.Reader) (json.RawMessage, error) {
 			break
 		}
 
-		if strings.HasPrefix(line, "Content-Length: ") {
-			n, err := strconv.Atoi(strings.TrimPrefix(line, "Content-Length: "))
+		if value, ok := strings.CutPrefix(line, "Content-Length: "); ok {
+			n, err := strconv.Atoi(value)
 			if err != nil {
 				return nil, fmt.Errorf("lsp: bad Content-Length: %w", err)
 			}
@@ -258,7 +260,7 @@ func readLSPMessage(r *bufio.Reader) (json.RawMessage, error) {
 	}
 
 	if length == 0 {
-		return nil, fmt.Errorf("lsp: missing Content-Length header")
+		return nil, errors.New("lsp: missing Content-Length header")
 	}
 
 	body := make([]byte, length)

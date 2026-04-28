@@ -18,6 +18,8 @@ type globals struct {
 	port int
 }
 
+const subcommandList = "list"
+
 func Execute(args []string) int {
 	cfg := config.Load()
 	g := globals{repo: ".", port: cfg.DaemonPort}

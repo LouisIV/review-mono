@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,7 +12,7 @@ import (
 )
 
 func lspCmd(args []string, cfg config.Config) error {
-	sub := "list"
+	sub := subcommandList
 	if len(args) > 0 && !isHelpArg(args[0]) {
 		sub = args[0]
 		args = args[1:]
@@ -24,7 +25,7 @@ func lspCmd(args []string, cfg config.Config) error {
 	}
 
 	switch sub {
-	case "list":
+	case subcommandList:
 		return lspListCmd(cfg)
 	case "install":
 		return lspInstallCmd(args, cfg)
@@ -63,7 +64,7 @@ func lspListCmd(cfg config.Config) error {
 }
 
 // serverStatus returns a display status string and an install hint for def.
-func serverStatus(def lsp.ServerDef, cfg config.Config) (status, hint string) {
+func serverStatus(def lsp.ServerDef, cfg config.Config) (string, string) {
 	found := lsp.FindServer(def.Extensions[0], cfg.LSP.Servers)
 	if found == nil {
 		cmd := def.InstallCommand()
@@ -80,7 +81,7 @@ func serverStatus(def lsp.ServerDef, cfg config.Config) (status, hint string) {
 	case "path":
 		return "✓ installed", ""
 	default:
-		return fmt.Sprintf("✓ %s", found.Source), ""
+		return "✓ " + found.Source, ""
 	}
 }
 
@@ -132,7 +133,7 @@ func installServer(def lsp.ServerDef) error {
 
 	fmt.Printf("%-24s  %s\n", def.Language, strings.Join(argv, " "))
 
-	cmd := exec.Command(argv[0], argv[1:]...) //nolint:gosec
+	cmd := exec.CommandContext(context.Background(), argv[0], argv[1:]...) //nolint:gosec
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
