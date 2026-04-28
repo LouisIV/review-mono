@@ -232,7 +232,7 @@ func (m *model) requestHover() (tea.Model, tea.Cmd) {
 	}
 
 	if m.lspManager == nil {
-		m.lspManager = lsp.NewManager(m.opts.RepoPath)
+		m.lspManager = lsp.NewManager(m.opts.RepoPath, m.opts.Config.LSP.Servers)
 	}
 
 	m.mode = modeHover

@@ -6,14 +6,23 @@ import (
 	"path/filepath"
 )
 
+// LSPConfig holds per-user language server preferences.
+type LSPConfig struct {
+	// Servers maps a file extension (e.g. ".go") to a custom binary path.
+	// When set, this path is used instead of auto-discovery for that extension.
+	// Example: {".go": "/usr/local/bin/gopls", ".py": "/home/user/.venv/bin/pyright-langserver"}
+	Servers map[string]string `json:"servers"`
+}
+
 type Config struct {
-	AnthropicAPIKey      string `json:"anthropic_api_key"`
-	AIProvider           string `json:"ai_provider"`
-	DefaultBaseBranch    string `json:"default_base_branch"`
-	DaemonPort           int    `json:"daemon_port"`
-	OpenBrowserOnApprove bool   `json:"open_browser_on_approve"`
-	GitHubHost           string `json:"github_host"`
-	GitLabHost           string `json:"gitlab_host"`
+	AnthropicAPIKey      string    `json:"anthropic_api_key"`
+	AIProvider           string    `json:"ai_provider"`
+	DefaultBaseBranch    string    `json:"default_base_branch"`
+	DaemonPort           int       `json:"daemon_port"`
+	OpenBrowserOnApprove bool      `json:"open_browser_on_approve"`
+	GitHubHost           string    `json:"github_host"`
+	GitLabHost           string    `json:"gitlab_host"`
+	LSP                  LSPConfig `json:"lsp"`
 }
 
 func Default() Config {

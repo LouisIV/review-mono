@@ -83,6 +83,8 @@ func run(args []string, g globals, cfg config.Config) error {
 		return requestChangesCmd(args[1:], g)
 	case "watch":
 		return watchCmd(args[1:], g)
+	case "lsp":
+		return lspCmd(args[1:], cfg)
 	case "tui":
 		return tuiCmd(args[1:], g, cfg)
 	case "widget":
@@ -354,6 +356,7 @@ func rootCommands() []commandHelp {
 		{name: "approve", summary: "push and mark the review approved"},
 		{name: "request-changes", summary: "mark the review as changes requested"},
 		{name: "watch", summary: "stream review daemon events"},
+		{name: "lsp", summary: "list, discover, or install language servers"},
 		{name: "tui", summary: "open the keyboard-first review interface"},
 		{name: "widget", summary: "render or interact with TUI widget demos"},
 	}

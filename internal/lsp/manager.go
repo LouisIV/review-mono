@@ -8,23 +8,31 @@ import (
 )
 
 type entry struct {
-	client  *Client
-	opened  map[string]bool
+	client *Client
+	opened map[string]bool
 }
 
-// Manager owns one LSP client per server type and multiplexes hover requests
+// Manager owns one LSP client per server binary and multiplexes hover requests
 // across files.  It is safe for concurrent use.
 type Manager struct {
-	rootPath string
-	clients  map[string]*entry
-	mu       sync.Mutex
+	rootPath  string
+	overrides map[string]string // file-extension → custom binary path from config
+	clients   map[string]*entry // keyed by binary name
+	mu        sync.Mutex
 }
 
-// NewManager creates a Manager rooted at rootPath (the git repository root).
-func NewManager(rootPath string) *Manager {
+// NewManager creates a Manager rooted at rootPath.
+// overrides maps file extensions (e.g. ".go") to custom binary paths;
+// pass nil or an empty map to rely solely on auto-discovery.
+func NewManager(rootPath string, overrides map[string]string) *Manager {
+	if overrides == nil {
+		overrides = map[string]string{}
+	}
+
 	return &Manager{
-		rootPath: rootPath,
-		clients:  make(map[string]*entry),
+		rootPath:  rootPath,
+		overrides: overrides,
+		clients:   make(map[string]*entry),
 	}
 }
 
@@ -32,17 +40,17 @@ func NewManager(rootPath string) *Manager {
 // Returns an empty string (no error) when no server is available or the server
 // has no info for that location.
 func (m *Manager) Hover(repoPath, filename string, line int) (string, error) {
-	cmd := ServerCommand(filename)
-	if cmd == nil {
+	found := FindServer(filename, m.overrides)
+	if found == nil {
 		return "", nil
 	}
 
-	key := cmd[0]
+	key := found.Args[0]
 	m.mu.Lock()
 	e, ok := m.clients[key]
 
 	if !ok {
-		client, err := Start(cmd)
+		client, err := Start(found.Args)
 		if err != nil {
 			m.mu.Unlock()
 
@@ -76,8 +84,7 @@ func (m *Manager) Hover(repoPath, filename string, line int) (string, error) {
 			return "", fmt.Errorf("lsp: read file: %w", err)
 		}
 
-		langID := LanguageID(filename)
-		if err := e.client.DidOpen(fullPath, string(text), langID); err != nil {
+		if err := e.client.DidOpen(fullPath, string(text), LanguageID(filename)); err != nil {
 			return "", fmt.Errorf("lsp: didOpen: %w", err)
 		}
 	}

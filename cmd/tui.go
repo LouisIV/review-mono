@@ -51,7 +51,7 @@ func tuiCmd(args []string, g globals, cfg config.Config) error {
 		return err
 	}
 
-	return tui.Run(tui.Options{RepoPath: repo.Path, Session: session, Client: c})
+	return tui.Run(tui.Options{RepoPath: repo.Path, Session: session, Client: c, Config: cfg})
 }
 
 func currentSessionOrOpen(repo git.Repo, c client.Client, base string) (models.Session, error) {

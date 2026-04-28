@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"review/internal/client"
+	"review/internal/config"
 	"review/internal/lsp"
 	"review/internal/models"
 	"review/internal/tui/widgets"
@@ -18,6 +19,7 @@ type Options struct {
 	RepoPath string
 	Session  models.Session
 	Client   client.Client
+	Config   config.Config
 }
 
 func Run(opts Options) error {
