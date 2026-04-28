@@ -96,7 +96,7 @@ func RenderReviewWorkspace(width, height int, data WorkspaceData) string {
 	bottom := renderRuntimeBottom(width, bottomHeight, data)
 	help := mutedStyle.Render(
 		"Tab focus  Files:j/k choose  Diff:j/k line J/K hunk  [/]/file  f goto" +
-			"  / search  v visual  c comment  r resolve  d desc  g gen  a approve  x request  ? help  q quit",
+			"  / search  v visual  c comment  r resolve  d desc  g gen  i hover  a approve  x request  ? help  q quit",
 	)
 
 	return lipgloss.JoinVertical(
@@ -207,34 +207,39 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 		line = fmt.Sprintf("%4d", row.Line)
 	}
 	sign := " "
-	style := lipgloss.NewStyle()
+	signStyle := lipgloss.NewStyle()
 	switch row.Kind {
 	case "add":
 		sign = "+"
-		style = addStyle
+		signStyle = addStyle
 	case "remove":
 		sign = "-"
-		style = removeStyle
+		signStyle = removeStyle
 	}
 
-	content := row.Content
-	if data.XOffset > 0 && data.XOffset < len(content) {
-		content = content[data.XOffset:]
-	} else if data.XOffset >= len(content) {
-		content = ""
+	// Apply XOffset on the raw string before truncation and syntax coloring.
+	raw := row.Content
+	if data.XOffset > 0 && data.XOffset < len(raw) {
+		raw = raw[data.XOffset:]
+	} else if data.XOffset >= len(raw) {
+		raw = ""
 	}
-	content = highlight(strings.ReplaceAll(content, "\t", lineNumBlank), data.Query)
+	raw = strings.ReplaceAll(raw, "\t", lineNumBlank)
+	raw = truncateMiddle(raw, width-12)
+	content := renderSyntaxLine(data.ActiveFile, raw, data.Query)
+
 	badge := ""
 	for _, comment := range data.Comments {
 		if comment.File == data.ActiveFile && !comment.Resolved && comment.Line == row.Line {
 			badge = " " + commentStyle.Render("@"+comment.ID)
+
 			break
 		}
 	}
 
 	rendered := fmt.Sprintf(
 		"%s %s  %s %s%s",
-		marker, mutedStyle.Render(line), style.Render(sign), style.Render(truncateMiddle(content, width-12)), badge,
+		marker, mutedStyle.Render(line), signStyle.Render(sign), content, badge,
 	)
 	if row.Line == data.SelectedLine {
 		return selectedLineStyle().Render(rendered)

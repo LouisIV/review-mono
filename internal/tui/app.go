@@ -9,6 +9,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"review/internal/client"
+	"review/internal/config"
+	"review/internal/lsp"
 	"review/internal/models"
 	"review/internal/tui/widgets"
 )
@@ -17,11 +19,15 @@ type Options struct {
 	RepoPath string
 	Session  models.Session
 	Client   client.Client
+	Config   config.Config
 }
 
 func Run(opts Options) error {
 	m := newModel(opts)
-	_, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
+	final, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
+	if fm, ok := final.(*model); ok && fm.lspManager != nil {
+		fm.lspManager.Close()
+	}
 
 	return err
 }
@@ -39,6 +45,7 @@ const (
 	modeConfirmApprove
 	modeConfirmRequest
 	modeContext
+	modeHover
 )
 
 type focus int
@@ -95,6 +102,9 @@ type model struct {
 	description string
 	context     []string
 	contextIdx  int
+
+	lspManager *lsp.Manager
+	hoverInfo  string
 }
 
 func newModel(opts Options) *model {
@@ -154,6 +164,10 @@ type descriptionMsg struct {
 	body string
 }
 
+type hoverMsg struct {
+	text string
+}
+
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -205,6 +219,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if strings.TrimSpace(m.description) == "" {
 			m.description = "No description saved."
 		}
+
+		return m, nil
+	case hoverMsg:
+		m.hoverInfo = msg.text
 
 		return m, nil
 	case errMsg:
@@ -355,4 +373,18 @@ func mustComments(opts Options) []models.Comment {
 	comments, _ := opts.Client.Comments(opts.RepoPath, opts.Session, nil)
 
 	return comments
+}
+
+func loadHover(opts Options, mgr *lsp.Manager, file string, line int) tea.Cmd {
+	return func() tea.Msg {
+		text, err := mgr.Hover(opts.RepoPath, file, line)
+		if err != nil {
+			return errMsg{err}
+		}
+		if strings.TrimSpace(text) == "" {
+			text = "No hover info available for this location."
+		}
+
+		return hoverMsg{text: text}
+	}
 }

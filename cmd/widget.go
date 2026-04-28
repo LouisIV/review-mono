@@ -16,7 +16,7 @@ func widgetCmd(args []string, _ globals) error {
 		return nil
 	}
 
-	if args[0] == "list" {
+	if args[0] == subcommandList {
 		fmt.Println(strings.Join(tuidemo.Names(), "\n"))
 
 		return nil
