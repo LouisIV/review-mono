@@ -129,7 +129,17 @@ func (m *model) ensureVisible() {
 }
 
 func (m *model) diffHeight() int {
-	return max(m.height-12, 5)
+	bottomHeight := 5
+	if m.height > 32 {
+		bottomHeight = 7
+	}
+	if h := m.bottomHeight(); h > bottomHeight {
+		bottomHeight = h
+	}
+
+	bodyHeight := max(m.height-bottomHeight-8, 8)
+
+	return max(bodyHeight-2, 1)
 }
 
 func (m *model) selectFile(index int) (tea.Model, tea.Cmd) {

@@ -51,10 +51,7 @@ func fuzzyContains(s, query string) bool {
 }
 
 func highlight(s, query string, bg lipgloss.Color) string {
-	base := lipgloss.NewStyle()
-	if bg != "" {
-		base = base.Background(bg)
-	}
+	base := lineBgStyle(bg)
 
 	if query == "" {
 		return base.Render(s)
@@ -68,6 +65,35 @@ func highlight(s, query string, bg lipgloss.Color) string {
 	}
 
 	return base.Render(s[:idx]) + searchStyle.Render(s[idx:idx+len(query)]) + base.Render(s[idx+len(query):])
+}
+
+func lineBgStyle(bg lipgloss.Color) lipgloss.Style {
+	if bg == "" {
+		return lipgloss.NewStyle()
+	}
+
+	return lipgloss.NewStyle().Background(bg)
+}
+
+func styleWithLineBg(style lipgloss.Style, bg lipgloss.Color) lipgloss.Style {
+	if bg == "" {
+		return style
+	}
+
+	return style.Background(bg)
+}
+
+func padLineBackground(rendered string, width int, bg lipgloss.Color) string {
+	if bg == "" {
+		return rendered
+	}
+
+	remaining := width - lipgloss.Width(rendered)
+	if remaining <= 0 {
+		return rendered
+	}
+
+	return rendered + lineBgStyle(bg).Render(strings.Repeat(" ", remaining))
 }
 
 func truncateMiddle(s string, width int) string {

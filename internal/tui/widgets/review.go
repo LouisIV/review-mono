@@ -9,6 +9,11 @@ import (
 )
 
 const lineNumBlank = "    "
+const (
+	lineKindAdd    = "add"
+	lineKindRemove = "remove"
+	lineSign       = "▌"
+)
 
 type FileItem struct {
 	Path       string
@@ -155,13 +160,13 @@ func renderRuntimeDiff(width, height int, data WorkspaceData) string {
 	if data.Top > 0 && data.Top < len(visible) {
 		visible = visible[data.Top:]
 	}
-	maxRows := max(height-4, 1)
+	maxRows := max(height-2, 1)
 	if len(visible) > maxRows {
 		visible = visible[:maxRows]
 	}
 
 	syntax := newSyntaxRenderer(data.ActiveFile, data.Query)
-	commentBadges := unresolvedCommentBadges(data)
+	commentBadges := unresolvedCommentBadgeIDs(data)
 	for _, row := range visible {
 		rows = append(rows, renderRuntimeDiffLine(width-4, row, data, syntax, commentBadges))
 	}
@@ -199,6 +204,8 @@ func renderRuntimeDiffLine(
 		return hunkStyle.Render("      " + truncateMiddle(row.Content, width-6))
 	}
 
+	bg := lineBackground(row.Kind, row.Line == data.SelectedLine)
+
 	marker := " "
 	if row.Line == data.SelectedLine {
 		marker = ">"
@@ -215,32 +222,15 @@ func renderRuntimeDiffLine(
 		line = fmt.Sprintf("%4d", row.Line)
 	}
 
-	isSelected := row.Line == data.SelectedLine
-	var bg lipgloss.Color
 	sign := " "
 	signStyle := lipgloss.NewStyle()
 	switch row.Kind {
-	case "add":
-		sign = "▌"
+	case lineKindAdd:
+		sign = lineSign
 		signStyle = addStyle
-		if !isSelected {
-			bg = addBg
-			signStyle = addStyle.Background(addBg)
-		}
-	case "remove":
-		sign = "▌"
+	case lineKindRemove:
+		sign = lineSign
 		signStyle = removeStyle
-		if !isSelected {
-			bg = removeBg
-			signStyle = removeStyle.Background(removeBg)
-		}
-	}
-
-	bgStyle := lipgloss.NewStyle()
-	lineNumStyle := mutedStyle
-	if bg != "" {
-		bgStyle = bgStyle.Background(bg)
-		lineNumStyle = mutedStyle.Background(bg)
 	}
 
 	// Apply XOffset on the raw string before truncation and syntax coloring.
@@ -253,27 +243,36 @@ func renderRuntimeDiffLine(
 	raw = strings.ReplaceAll(raw, "\t", lineNumBlank)
 	raw = truncateMiddle(raw, width-12)
 	content := syntax.renderLine(raw, bg)
-	badge := commentBadges[row.Line]
+	badge := renderCommentBadge(commentBadges[row.Line], bg)
 
-	gutter := bgStyle.Render(marker+" ") + lineNumStyle.Render(line) + bgStyle.Render("  ") + signStyle.Render(sign) + bgStyle.Render(" ")
-	rendered := gutter + content + badge
+	rendered := lineBgStyle(bg).Render(marker+" ") +
+		styleWithLineBg(mutedStyle, bg).Render(line) +
+		lineBgStyle(bg).Render("  ") +
+		styleWithLineBg(signStyle, bg).Render(sign) +
+		lineBgStyle(bg).Render(" ") +
+		content +
+		badge
 
-	if isSelected {
-		return selectedLineStyle().Render(rendered)
-	}
-
-	return rendered
+	return padLineBackground(rendered, width, bg)
 }
 
-func unresolvedCommentBadges(data WorkspaceData) map[int]string {
+func unresolvedCommentBadgeIDs(data WorkspaceData) map[int]string {
 	badges := map[int]string{}
 	for _, comment := range data.Comments {
 		if comment.File == data.ActiveFile && !comment.Resolved {
-			badges[comment.Line] = " " + commentStyle.Render("@"+comment.ID)
+			badges[comment.Line] = comment.ID
 		}
 	}
 
 	return badges
+}
+
+func renderCommentBadge(id string, bg lipgloss.Color) string {
+	if id == "" {
+		return ""
+	}
+
+	return lineBgStyle(bg).Render(" ") + styleWithLineBg(commentStyle, bg).Render("@"+id)
 }
 
 func renderRuntimeBottom(width, height int, data WorkspaceData) string {

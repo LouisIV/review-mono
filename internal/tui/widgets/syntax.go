@@ -119,10 +119,8 @@ func appendTokenSpan(sb *strings.Builder, tv string, pos int, ts lipgloss.Style,
 // More-specific sub-categories are checked before their parent categories so
 // that, e.g., type-keywords get cyan while other keywords get pink.
 func syntaxStyle(tt chroma.TokenType, bg lipgloss.Color) lipgloss.Style {
-	base := lipgloss.NewStyle()
-	if bg != "" {
-		base = base.Background(bg)
-	}
+	base := lineBgStyle(bg)
+
 	switch {
 	case tt.InCategory(chroma.Comment):
 		return base.Foreground(lipgloss.Color("244"))

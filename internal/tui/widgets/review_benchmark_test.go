@@ -34,7 +34,7 @@ func BenchmarkUnresolvedCommentBadges(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for b.Loop() {
-		if len(unresolvedCommentBadges(data)) == 0 {
+		if len(unresolvedCommentBadgeIDs(data)) == 0 {
 			b.Fatal("empty badge map")
 		}
 	}
