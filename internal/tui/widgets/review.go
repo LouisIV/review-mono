@@ -191,6 +191,8 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 		return hunkStyle.Render("      " + truncateMiddle(row.Content, width-6))
 	}
 
+	bg := lineBackground(row.Kind, row.Line == data.SelectedLine)
+
 	marker := " "
 	if row.Line == data.SelectedLine {
 		marker = ">"
@@ -207,32 +209,15 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 		line = fmt.Sprintf("%4d", row.Line)
 	}
 
-	isSelected := row.Line == data.SelectedLine
-	var bg lipgloss.Color
 	sign := " "
 	signStyle := lipgloss.NewStyle()
 	switch row.Kind {
 	case "add":
 		sign = "▌"
 		signStyle = addStyle
-		if !isSelected {
-			bg = addBg
-			signStyle = addStyle.Background(addBg)
-		}
 	case "remove":
 		sign = "▌"
 		signStyle = removeStyle
-		if !isSelected {
-			bg = removeBg
-			signStyle = removeStyle.Background(removeBg)
-		}
-	}
-
-	bgStyle := lipgloss.NewStyle()
-	lineNumStyle := mutedStyle
-	if bg != "" {
-		bgStyle = bgStyle.Background(bg)
-		lineNumStyle = mutedStyle.Background(bg)
 	}
 
 	// Apply XOffset on the raw string before truncation and syntax coloring.
@@ -249,20 +234,21 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 	badge := ""
 	for _, comment := range data.Comments {
 		if comment.File == data.ActiveFile && !comment.Resolved && comment.Line == row.Line {
-			badge = " " + commentStyle.Render("@"+comment.ID)
+			badge = lineBgStyle(bg).Render(" ") + styleWithLineBg(commentStyle, bg).Render("@"+comment.ID)
 
 			break
 		}
 	}
 
-	gutter := bgStyle.Render(marker+" ") + lineNumStyle.Render(line) + bgStyle.Render("  ") + signStyle.Render(sign) + bgStyle.Render(" ")
-	rendered := gutter + content + badge
+	rendered := lineBgStyle(bg).Render(marker+" ") +
+		styleWithLineBg(mutedStyle, bg).Render(line) +
+		lineBgStyle(bg).Render("  ") +
+		styleWithLineBg(signStyle, bg).Render(sign) +
+		lineBgStyle(bg).Render(" ") +
+		content +
+		badge
 
-	if isSelected {
-		return selectedLineStyle().Render(rendered)
-	}
-
-	return rendered
+	return padLineBackground(rendered, width, bg)
 }
 
 func renderRuntimeBottom(width, height int, data WorkspaceData) string {
