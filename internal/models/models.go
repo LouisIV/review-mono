@@ -50,8 +50,9 @@ type DiffLine struct {
 }
 
 type DiffHunk struct {
-	Header string     `json:"header"`
-	Lines  []DiffLine `json:"lines"`
+	Header      string     `json:"header"`
+	Lines       []DiffLine `json:"lines"`
+	Uncommitted bool       `json:"uncommitted,omitempty"`
 }
 
 type DiffFile struct {

@@ -57,10 +57,11 @@ const (
 )
 
 type diffRow struct {
-	kind    string
-	hunk    int
-	line    int
-	content string
+	kind        string
+	hunk        int
+	line        int
+	content     string
+	uncommitted bool
 }
 
 type model struct {
