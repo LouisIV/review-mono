@@ -88,27 +88,45 @@ func (w Diff) renderLine(row diffRow) string {
 
 	oldLine := fmt.Sprintf("%4d", row.Line)
 	newLine := fmt.Sprintf("%4d", row.Line)
+
+	isSelected := row.Line == w.props.SelectedLine
+	var bg lipgloss.Color
 	sign := " "
 	signStyle := lipgloss.NewStyle()
 
 	switch row.Kind {
 	case "add":
 		oldLine = lineNumBlank
-		sign = "+"
+		sign = "▌"
 		signStyle = addStyle
+		if !isSelected {
+			bg = addBg
+			signStyle = addStyle.Background(addBg)
+		}
 	case "remove":
 		newLine = lineNumBlank
-		sign = "-"
+		sign = "▌"
 		signStyle = removeStyle
+		if !isSelected {
+			bg = removeBg
+			signStyle = removeStyle.Background(removeBg)
+		}
+	}
+
+	bgStyle := lipgloss.NewStyle()
+	gutterStyle := mutedStyle
+	if bg != "" {
+		bgStyle = bgStyle.Background(bg)
+		gutterStyle = mutedStyle.Background(bg)
 	}
 
 	raw := strings.ReplaceAll(row.Content, "\t", lineNumBlank)
-	content := renderSyntaxLine(w.props.ActiveFile, raw, w.props.Query)
+	content := renderSyntaxLine(w.props.ActiveFile, raw, w.props.Query, bg)
 	comment := w.commentBadge(row.Line)
-	gutter := mutedStyle.Render(fmt.Sprintf("%s %s %s", marker, oldLine, newLine))
-	rendered := fmt.Sprintf("%s  %s %s%s", gutter, signStyle.Render(sign), content, comment)
+	gutter := gutterStyle.Render(fmt.Sprintf("%s %s %s", marker, oldLine, newLine))
+	rendered := gutter + bgStyle.Render("  ") + signStyle.Render(sign) + bgStyle.Render(" ") + content + comment
 
-	if row.Line == w.props.SelectedLine {
+	if isSelected {
 		return selectedLineStyle().Render(rendered)
 	}
 

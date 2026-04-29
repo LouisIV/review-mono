@@ -3,6 +3,8 @@ package widgets
 import (
 	"sort"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func actionsFor(target string) []string {
@@ -48,19 +50,24 @@ func fuzzyContains(s, query string) bool {
 	return true
 }
 
-func highlight(s, query string) string {
+func highlight(s, query string, bg lipgloss.Color) string {
+	base := lipgloss.NewStyle()
+	if bg != "" {
+		base = base.Background(bg)
+	}
+
 	if query == "" {
-		return s
+		return base.Render(s)
 	}
 
 	lower := strings.ToLower(s)
 	q := strings.ToLower(query)
 	idx := strings.Index(lower, q)
 	if idx < 0 {
-		return s
+		return base.Render(s)
 	}
 
-	return s[:idx] + searchStyle.Render(s[idx:idx+len(query)]) + s[idx+len(query):]
+	return base.Render(s[:idx]) + searchStyle.Render(s[idx:idx+len(query)]) + base.Render(s[idx+len(query):])
 }
 
 func truncateMiddle(s string, width int) string {

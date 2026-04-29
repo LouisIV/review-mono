@@ -206,15 +206,33 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 	if row.Line > 0 {
 		line = fmt.Sprintf("%4d", row.Line)
 	}
+
+	isSelected := row.Line == data.SelectedLine
+	var bg lipgloss.Color
 	sign := " "
 	signStyle := lipgloss.NewStyle()
 	switch row.Kind {
 	case "add":
-		sign = "+"
+		sign = "▌"
 		signStyle = addStyle
+		if !isSelected {
+			bg = addBg
+			signStyle = addStyle.Background(addBg)
+		}
 	case "remove":
-		sign = "-"
+		sign = "▌"
 		signStyle = removeStyle
+		if !isSelected {
+			bg = removeBg
+			signStyle = removeStyle.Background(removeBg)
+		}
+	}
+
+	bgStyle := lipgloss.NewStyle()
+	lineNumStyle := mutedStyle
+	if bg != "" {
+		bgStyle = bgStyle.Background(bg)
+		lineNumStyle = mutedStyle.Background(bg)
 	}
 
 	// Apply XOffset on the raw string before truncation and syntax coloring.
@@ -226,7 +244,7 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 	}
 	raw = strings.ReplaceAll(raw, "\t", lineNumBlank)
 	raw = truncateMiddle(raw, width-12)
-	content := renderSyntaxLine(data.ActiveFile, raw, data.Query)
+	content := renderSyntaxLine(data.ActiveFile, raw, data.Query, bg)
 
 	badge := ""
 	for _, comment := range data.Comments {
@@ -237,11 +255,10 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 		}
 	}
 
-	rendered := fmt.Sprintf(
-		"%s %s  %s %s%s",
-		marker, mutedStyle.Render(line), signStyle.Render(sign), content, badge,
-	)
-	if row.Line == data.SelectedLine {
+	gutter := bgStyle.Render(marker+" ") + lineNumStyle.Render(line) + bgStyle.Render("  ") + signStyle.Render(sign) + bgStyle.Render(" ")
+	rendered := gutter + content + badge
+
+	if isSelected {
 		return selectedLineStyle().Render(rendered)
 	}
 

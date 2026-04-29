@@ -12,4 +12,7 @@ var (
 	hunkStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("242"))
 	commentStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
 	searchStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("16")).Background(lipgloss.Color("220"))
+
+	addBg    = lipgloss.Color("#0e1f0e")
+	removeBg = lipgloss.Color("#3a1212")
 )
