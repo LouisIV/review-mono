@@ -49,6 +49,15 @@ func flatten(file models.DiffFile) []diffRow {
 	return rows
 }
 
+func toWidgetRows(rows []diffRow) []widgets.DiffItem {
+	out := make([]widgets.DiffItem, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, widgets.DiffItem{Kind: row.kind, Hunk: row.hunk, Line: row.line, Content: row.content})
+	}
+
+	return out
+}
+
 func firstSelectable(rows []diffRow) int {
 	for i, row := range rows {
 		if row.line > 0 {
@@ -274,15 +283,6 @@ func (m *model) widgetFiles() []widgets.FileItem {
 			Unresolved: unresolved[file.Path],
 			Viewed:     m.viewed[file.Path],
 		})
-	}
-
-	return out
-}
-
-func (m *model) widgetRows() []widgets.DiffItem {
-	out := make([]widgets.DiffItem, 0, len(m.rows))
-	for _, row := range m.rows {
-		out = append(out, widgets.DiffItem{Kind: row.kind, Hunk: row.hunk, Line: row.line, Content: row.content})
 	}
 
 	return out
