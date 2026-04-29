@@ -79,6 +79,7 @@ type model struct {
 
 	fileIndex int
 	rows      []diffRow
+	diffItems []widgets.DiffItem
 	lineIndex int
 	top       int
 	xOffset   int
@@ -195,6 +196,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case fileLoadedMsg:
 		m.replaceFile(msg.file)
 		m.rows = flatten(msg.file)
+		m.diffItems = toWidgetRows(m.rows)
 		m.lineIndex = firstSelectable(m.rows)
 		m.top = 0
 		m.xOffset = 0
@@ -268,7 +270,7 @@ func (m *model) View() string {
 		Status:       m.session.Status,
 		CommitCount:  len(m.commits),
 		Files:        m.widgetFiles(),
-		Rows:         m.widgetRows(),
+		Rows:         m.diffItems,
 		Comments:     m.widgetComments(),
 		ActiveFile:   m.currentFile(),
 		SelectedLine: m.currentLine(),

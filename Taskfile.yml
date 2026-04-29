@@ -17,6 +17,11 @@ tasks:
     cmds:
       - GOCACHE="${GOCACHE:-/tmp/review-go-cache}" go test ./...
 
+  bench:
+    desc: Run TUI render-path benchmarks; pass args with `task bench -- -count=10`
+    cmds:
+      - GOCACHE="${GOCACHE:-/tmp/review-go-cache}" go test -run '^$' -bench 'Benchmark(ModelView|ToWidgetRows|RenderReview|Unresolved)' -benchmem ./internal/tui ./internal/tui/widgets {{.CLI_ARGS}}
+
   lint:
     desc: Run golangci-lint
     deps:

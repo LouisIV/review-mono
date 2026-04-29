@@ -1,0 +1,62 @@
+name: TUI Benchmarks
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  deployments: write
+
+concurrency:
+  group: tui-benchmarks
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    name: Benchmark TUI render paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Run benchmarks
+        run: |
+          go test -run '^$' \
+            -bench 'Benchmark(ModelView|ToWidgetRows|RenderReview|Unresolved)' \
+            -benchmem \
+            -count=10 \
+            ./internal/tui ./internal/tui/widgets \
+            | tee bench.txt
+
+      - name: Ensure Pages branch exists
+        run: |
+          if ! git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            empty_tree="$(git hash-object -t tree /dev/null)"
+            commit="$(git commit-tree "$empty_tree" -m "Initialize GitHub Pages")"
+            git push origin "$commit:refs/heads/gh-pages"
+          fi
+
+      - name: Store benchmark history
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: TUI Benchmarks
+          tool: go
+          output-file-path: bench.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/tui
+          alert-threshold: 150%
+          comment-on-alert: true
+          fail-on-alert: false
+          summary-always: true

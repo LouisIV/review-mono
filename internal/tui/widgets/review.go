@@ -165,8 +165,10 @@ func renderRuntimeDiff(width, height int, data WorkspaceData) string {
 		visible = visible[:maxRows]
 	}
 
+	syntax := newSyntaxRenderer(data.ActiveFile, data.Query)
+	commentBadges := unresolvedCommentBadgeIDs(data)
 	for _, row := range visible {
-		rows = append(rows, renderRuntimeDiffLine(width-4, row, data))
+		rows = append(rows, renderRuntimeDiffLine(width-4, row, data, syntax, commentBadges))
 	}
 	if len(data.Rows) == 0 {
 		rows = append(rows, mutedStyle.Render("  no diff loaded"))
@@ -191,7 +193,13 @@ func stripANSI(value, fallback string) string {
 	return value
 }
 
-func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
+func renderRuntimeDiffLine(
+	width int,
+	row DiffItem,
+	data WorkspaceData,
+	syntax syntaxRenderer,
+	commentBadges map[int]string,
+) string {
 	if row.Kind == "hunk" {
 		return hunkStyle.Render("      " + truncateMiddle(row.Content, width-6))
 	}
@@ -234,16 +242,8 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 	}
 	raw = strings.ReplaceAll(raw, "\t", lineNumBlank)
 	raw = truncateMiddle(raw, width-12)
-	content := renderSyntaxLine(data.ActiveFile, raw, data.Query, bg)
-
-	badge := ""
-	for _, comment := range data.Comments {
-		if comment.File == data.ActiveFile && !comment.Resolved && comment.Line == row.Line {
-			badge = lineBgStyle(bg).Render(" ") + styleWithLineBg(commentStyle, bg).Render("@"+comment.ID)
-
-			break
-		}
-	}
+	content := syntax.renderLine(raw, bg)
+	badge := renderCommentBadge(commentBadges[row.Line], bg)
 
 	rendered := lineBgStyle(bg).Render(marker+" ") +
 		styleWithLineBg(mutedStyle, bg).Render(line) +
@@ -254,6 +254,25 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 		badge
 
 	return padLineBackground(rendered, width, bg)
+}
+
+func unresolvedCommentBadgeIDs(data WorkspaceData) map[int]string {
+	badges := map[int]string{}
+	for _, comment := range data.Comments {
+		if comment.File == data.ActiveFile && !comment.Resolved {
+			badges[comment.Line] = comment.ID
+		}
+	}
+
+	return badges
+}
+
+func renderCommentBadge(id string, bg lipgloss.Color) string {
+	if id == "" {
+		return ""
+	}
+
+	return lineBgStyle(bg).Render(" ") + styleWithLineBg(commentStyle, bg).Render("@"+id)
 }
 
 func renderRuntimeBottom(width, height int, data WorkspaceData) string {

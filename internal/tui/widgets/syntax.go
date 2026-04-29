@@ -8,23 +8,46 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+type syntaxRenderer struct {
+	lexer      chroma.Lexer
+	query      string
+	queryLower string
+}
+
+func newSyntaxRenderer(filename, query string) syntaxRenderer {
+	lx := lexers.Match(filename)
+	if lx != nil {
+		lx = chroma.Coalesce(lx)
+	}
+
+	return syntaxRenderer{
+		lexer:      lx,
+		query:      query,
+		queryLower: strings.ToLower(query),
+	}
+}
+
 // renderSyntaxLine applies syntax and search highlighting to a single line of
 // code. filename drives language detection; query is the active search string.
 // content must already have tabs expanded and be truncated to display width.
 func renderSyntaxLine(filename, content, query string, bg lipgloss.Color) string {
-	lexer := lexers.Match(filename)
-	if lexer == nil {
-		return highlight(content, query, bg)
+	renderer := newSyntaxRenderer(filename, query)
+
+	return renderer.renderLine(content, bg)
+}
+
+func (r syntaxRenderer) renderLine(content string, bg lipgloss.Color) string {
+	if r.lexer == nil {
+		return highlight(content, r.query, bg)
 	}
 
-	lexer = chroma.Coalesce(lexer)
-	iter, err := lexer.Tokenise(nil, strings.TrimRight(content, "\n"))
+	iter, err := r.lexer.Tokenise(nil, strings.TrimRight(content, "\n"))
 	if err != nil {
-		return highlight(content, query, bg)
+		return highlight(content, r.query, bg)
 	}
 
 	tokens := iter.Tokens()
-	matchStart, matchEnd := searchRange(content, query)
+	matchStart, matchEnd := searchRangeLower(content, r.queryLower)
 
 	var sb strings.Builder
 	pos := 0
@@ -36,19 +59,17 @@ func renderSyntaxLine(filename, content, query string, bg lipgloss.Color) string
 	return sb.String()
 }
 
-// searchRange returns the byte range [start, end) of the first case-insensitive
-// occurrence of query in s. Returns -1, -1 when not found or query is empty.
-func searchRange(s, query string) (int, int) {
-	if query == "" {
+func searchRangeLower(s, queryLower string) (int, int) {
+	if queryLower == "" {
 		return -1, -1
 	}
 
-	idx := strings.Index(strings.ToLower(s), strings.ToLower(query))
+	idx := strings.Index(strings.ToLower(s), queryLower)
 	if idx < 0 {
 		return -1, -1
 	}
 
-	return idx, idx + len(query)
+	return idx, idx + len(queryLower)
 }
 
 // appendTokenSpan writes tv to sb with ts applied, substituting searchStyle for
