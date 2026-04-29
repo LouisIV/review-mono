@@ -1,9 +1,11 @@
-package widgets
+package widgets_test
 
 import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"review/internal/tui/widgets"
 )
 
 func TestRenderRuntimeDiffUsesAvailableRows(t *testing.T) {
@@ -13,16 +15,16 @@ func TestRenderRuntimeDiffUsesAvailableRows(t *testing.T) {
 	bottomHeight := 5
 	bodyHeight := height - bottomHeight - 8
 	visibleRows := bodyHeight - 2
-	rows := make([]DiffItem, 0, visibleRows+1)
+	rows := make([]widgets.DiffItem, 0, visibleRows+1)
 	for i := 1; i <= visibleRows+1; i++ {
-		rows = append(rows, DiffItem{Kind: "context", Line: i, Content: fmt.Sprintf("visible-row-%02d", i)})
+		rows = append(rows, widgets.DiffItem{Kind: "context", Line: i, Content: fmt.Sprintf("visible-row-%02d", i)})
 	}
 
-	out := RenderReviewWorkspace(100, height, WorkspaceData{
+	out := widgets.RenderReviewWorkspace(100, height, widgets.WorkspaceData{
 		Branch:     "feature",
 		Base:       "main",
 		Status:     "in_review",
-		Files:      []FileItem{{Path: "file.go"}},
+		Files:      []widgets.FileItem{{Path: "file.go"}},
 		Rows:       rows,
 		ActiveFile: "file.go",
 		Focus:      "diff",

@@ -9,6 +9,11 @@ import (
 )
 
 const lineNumBlank = "    "
+const (
+	lineKindAdd    = "add"
+	lineKindRemove = "remove"
+	lineSign       = "▌"
+)
 
 type FileItem struct {
 	Path       string
@@ -212,11 +217,11 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 	sign := " "
 	signStyle := lipgloss.NewStyle()
 	switch row.Kind {
-	case "add":
-		sign = "▌"
+	case lineKindAdd:
+		sign = lineSign
 		signStyle = addStyle
-	case "remove":
-		sign = "▌"
+	case lineKindRemove:
+		sign = lineSign
 		signStyle = removeStyle
 	}
 
