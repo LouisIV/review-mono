@@ -18,17 +18,6 @@ func BenchmarkRenderReviewWorkspaceLargeDiff(b *testing.B) {
 	}
 }
 
-func BenchmarkRenderSyntaxLineGo(b *testing.B) {
-	line := "\tif comment.File == data.ActiveFile && !comment.Resolved { badges[comment.Line] = comment.ID }"
-	renderer := newSyntaxRenderer("internal/tui/widgets/review.go", "comment")
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for b.Loop() {
-		benchmarkRenderSink = renderer.renderLine(line, "")
-	}
-}
-
 func BenchmarkUnresolvedCommentBadges(b *testing.B) {
 	data := benchmarkWorkspaceData(100, 10, 5000)
 

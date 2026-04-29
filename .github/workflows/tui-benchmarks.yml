@@ -30,7 +30,7 @@ jobs:
       - name: Run benchmarks
         run: |
           go test -run '^$' \
-            -bench 'Benchmark(ModelView|ToWidgetRows|RenderReview|RenderSyntax|Unresolved)' \
+            -bench 'Benchmark(ModelView|ToWidgetRows|RenderReview|Unresolved)' \
             -benchmem \
             -count=10 \
             ./internal/tui ./internal/tui/widgets \
