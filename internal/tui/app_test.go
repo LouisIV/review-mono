@@ -67,6 +67,16 @@ func TestCommentActionRowRendersButtons(t *testing.T) {
 	}
 }
 
+func TestDiffHeightMatchesRenderedViewportRows(t *testing.T) {
+	t.Parallel()
+	m := newModel(Options{})
+	m.height = 28
+
+	if got, want := m.diffHeight(), 13; got != want {
+		t.Fatalf("diffHeight() = %d, want %d", got, want)
+	}
+}
+
 func newCommentTestModel(value string) *model {
 	m := newModel(Options{})
 	m.mode = modeComment

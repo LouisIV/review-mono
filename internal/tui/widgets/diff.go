@@ -73,10 +73,12 @@ func (w Diff) content() string {
 }
 
 func (w Diff) renderHunk(header string) string {
-	return hunkStyle.Render(fmt.Sprintf("      %4s %4s   %s", "", "", compactHunk(header)))
+	return hunkStyle.Render("          " + compactHunk(header))
 }
 
 func (w Diff) renderLine(row diffRow) string {
+	bg := lineBackground(row.Kind, row.Line == w.props.SelectedLine)
+
 	marker := " "
 	if row.Line == w.props.SelectedLine {
 		marker = ">"
@@ -86,39 +88,41 @@ func (w Diff) renderLine(row diffRow) string {
 		marker = "|"
 	}
 
-	oldLine := fmt.Sprintf("%4d", row.Line)
-	newLine := fmt.Sprintf("%4d", row.Line)
+	line := lineNumBlank
+	if row.Line > 0 {
+		line = fmt.Sprintf("%4d", row.Line)
+	}
+
 	sign := " "
 	signStyle := lipgloss.NewStyle()
 
 	switch row.Kind {
 	case "add":
-		oldLine = lineNumBlank
-		sign = "+"
+		sign = "▌"
 		signStyle = addStyle
 	case "remove":
-		newLine = lineNumBlank
-		sign = "-"
+		sign = "▌"
 		signStyle = removeStyle
 	}
 
 	raw := strings.ReplaceAll(row.Content, "\t", lineNumBlank)
-	content := renderSyntaxLine(w.props.ActiveFile, raw, w.props.Query)
-	comment := w.commentBadge(row.Line)
-	gutter := mutedStyle.Render(fmt.Sprintf("%s %s %s", marker, oldLine, newLine))
-	rendered := fmt.Sprintf("%s  %s %s%s", gutter, signStyle.Render(sign), content, comment)
+	content := renderSyntaxLine(w.props.ActiveFile, raw, w.props.Query, bg)
+	comment := w.commentBadge(row.Line, bg)
+	gutter := styleWithLineBg(mutedStyle, bg).Render(fmt.Sprintf("%s %s", marker, line))
+	rendered := gutter +
+		lineBgStyle(bg).Render("  ") +
+		styleWithLineBg(signStyle, bg).Render(sign) +
+		lineBgStyle(bg).Render(" ") +
+		content +
+		comment
 
-	if row.Line == w.props.SelectedLine {
-		return selectedLineStyle().Render(rendered)
-	}
-
-	return rendered
+	return padLineBackground(rendered, w.props.Width, bg)
 }
 
-func (w Diff) commentBadge(line int) string {
+func (w Diff) commentBadge(line int, bg lipgloss.Color) string {
 	for _, comment := range comments {
 		if comment.File == w.props.ActiveFile && comment.Line == line && !comment.Resolved {
-			return " " + commentStyle.Render("@ "+comment.ID)
+			return lineBgStyle(bg).Render(" ") + styleWithLineBg(commentStyle, bg).Render("@ "+comment.ID)
 		}
 	}
 
@@ -131,6 +135,17 @@ func compactHunk(header string) string {
 	return "@@ " + header
 }
 
-func selectedLineStyle() lipgloss.Style {
-	return lipgloss.NewStyle().Background(lipgloss.Color("236"))
+func lineBackground(kind string, selected bool) lipgloss.Color {
+	if selected {
+		return lipgloss.Color("236")
+	}
+
+	switch kind {
+	case "add":
+		return addBg
+	case "remove":
+		return removeBg
+	default:
+		return ""
+	}
 }

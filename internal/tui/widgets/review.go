@@ -9,6 +9,11 @@ import (
 )
 
 const lineNumBlank = "    "
+const (
+	lineKindAdd    = "add"
+	lineKindRemove = "remove"
+	lineSign       = "▌"
+)
 
 type FileItem struct {
 	Path       string
@@ -155,7 +160,7 @@ func renderRuntimeDiff(width, height int, data WorkspaceData) string {
 	if data.Top > 0 && data.Top < len(visible) {
 		visible = visible[data.Top:]
 	}
-	maxRows := max(height-4, 1)
+	maxRows := max(height-2, 1)
 	if len(visible) > maxRows {
 		visible = visible[:maxRows]
 	}
@@ -191,6 +196,8 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 		return hunkStyle.Render("      " + truncateMiddle(row.Content, width-6))
 	}
 
+	bg := lineBackground(row.Kind, row.Line == data.SelectedLine)
+
 	marker := " "
 	if row.Line == data.SelectedLine {
 		marker = ">"
@@ -206,14 +213,15 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 	if row.Line > 0 {
 		line = fmt.Sprintf("%4d", row.Line)
 	}
+
 	sign := " "
 	signStyle := lipgloss.NewStyle()
 	switch row.Kind {
-	case "add":
-		sign = "+"
+	case lineKindAdd:
+		sign = lineSign
 		signStyle = addStyle
-	case "remove":
-		sign = "-"
+	case lineKindRemove:
+		sign = lineSign
 		signStyle = removeStyle
 	}
 
@@ -226,26 +234,26 @@ func renderRuntimeDiffLine(width int, row DiffItem, data WorkspaceData) string {
 	}
 	raw = strings.ReplaceAll(raw, "\t", lineNumBlank)
 	raw = truncateMiddle(raw, width-12)
-	content := renderSyntaxLine(data.ActiveFile, raw, data.Query)
+	content := renderSyntaxLine(data.ActiveFile, raw, data.Query, bg)
 
 	badge := ""
 	for _, comment := range data.Comments {
 		if comment.File == data.ActiveFile && !comment.Resolved && comment.Line == row.Line {
-			badge = " " + commentStyle.Render("@"+comment.ID)
+			badge = lineBgStyle(bg).Render(" ") + styleWithLineBg(commentStyle, bg).Render("@"+comment.ID)
 
 			break
 		}
 	}
 
-	rendered := fmt.Sprintf(
-		"%s %s  %s %s%s",
-		marker, mutedStyle.Render(line), signStyle.Render(sign), content, badge,
-	)
-	if row.Line == data.SelectedLine {
-		return selectedLineStyle().Render(rendered)
-	}
+	rendered := lineBgStyle(bg).Render(marker+" ") +
+		styleWithLineBg(mutedStyle, bg).Render(line) +
+		lineBgStyle(bg).Render("  ") +
+		styleWithLineBg(signStyle, bg).Render(sign) +
+		lineBgStyle(bg).Render(" ") +
+		content +
+		badge
 
-	return rendered
+	return padLineBackground(rendered, width, bg)
 }
 
 func renderRuntimeBottom(width, height int, data WorkspaceData) string {

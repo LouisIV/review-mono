@@ -11,16 +11,16 @@ import (
 // renderSyntaxLine applies syntax and search highlighting to a single line of
 // code. filename drives language detection; query is the active search string.
 // content must already have tabs expanded and be truncated to display width.
-func renderSyntaxLine(filename, content, query string) string {
+func renderSyntaxLine(filename, content, query string, bg lipgloss.Color) string {
 	lexer := lexers.Match(filename)
 	if lexer == nil {
-		return highlight(content, query)
+		return highlight(content, query, bg)
 	}
 
 	lexer = chroma.Coalesce(lexer)
 	iter, err := lexer.Tokenise(nil, strings.TrimRight(content, "\n"))
 	if err != nil {
-		return highlight(content, query)
+		return highlight(content, query, bg)
 	}
 
 	tokens := iter.Tokens()
@@ -29,7 +29,7 @@ func renderSyntaxLine(filename, content, query string) string {
 	var sb strings.Builder
 	pos := 0
 	for _, tok := range tokens {
-		appendTokenSpan(&sb, tok.Value, pos, syntaxStyle(tok.Type), matchStart, matchEnd)
+		appendTokenSpan(&sb, tok.Value, pos, syntaxStyle(tok.Type, bg), matchStart, matchEnd)
 		pos += len(tok.Value)
 	}
 
@@ -87,33 +87,27 @@ func appendTokenSpan(sb *strings.Builder, tv string, pos int, ts lipgloss.Style,
 // syntaxStyle maps a Chroma token type to the corresponding lipgloss style.
 // More-specific sub-categories are checked before their parent categories so
 // that, e.g., type-keywords get cyan while other keywords get pink.
-func syntaxStyle(tt chroma.TokenType) lipgloss.Style {
+func syntaxStyle(tt chroma.TokenType, bg lipgloss.Color) lipgloss.Style {
+	base := lineBgStyle(bg)
+
 	switch {
 	case tt.InCategory(chroma.Comment):
-		// All Comment subtypes → muted gray.
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+		return base.Foreground(lipgloss.Color("244"))
 	case tt == chroma.KeywordType:
-		// Type keywords (int, string, bool, …) → cyan.
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("117"))
+		return base.Foreground(lipgloss.Color("117"))
 	case tt.InCategory(chroma.Keyword):
-		// Other keywords (if, for, func, …) → pink.
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
+		return base.Foreground(lipgloss.Color("204"))
 	case tt.InSubCategory(chroma.LiteralString):
-		// String literals → yellow.
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("221"))
+		return base.Foreground(lipgloss.Color("221"))
 	case tt.InSubCategory(chroma.LiteralNumber):
-		// Numeric literals → purple.
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("141"))
+		return base.Foreground(lipgloss.Color("141"))
 	case tt.InSubCategory(chroma.NameFunction):
-		// Function names → light green.
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("148"))
+		return base.Foreground(lipgloss.Color("148"))
 	case tt.InSubCategory(chroma.NameBuiltin):
-		// Built-in names → cyan-green.
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("80"))
+		return base.Foreground(lipgloss.Color("80"))
 	case tt == chroma.NameDecorator:
-		// Decorators / attributes → orange.
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
+		return base.Foreground(lipgloss.Color("214"))
 	default:
-		return lipgloss.NewStyle()
+		return base
 	}
 }
