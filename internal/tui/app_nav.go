@@ -36,13 +36,24 @@ func (m *model) replaceFile(file models.DiffFile) {
 func flatten(file models.DiffFile) []diffRow {
 	rows := make([]diffRow, 0, len(file.Hunks))
 	for hunkIndex, hunk := range file.Hunks {
-		rows = append(rows, diffRow{kind: "hunk", hunk: hunkIndex, content: hunk.Header})
+		rows = append(rows, diffRow{
+			kind:        "hunk",
+			hunk:        hunkIndex,
+			content:     hunk.Header,
+			uncommitted: hunk.Uncommitted,
+		})
 		for _, line := range hunk.Lines {
 			n := 0
 			if line.Number != nil {
 				n = *line.Number
 			}
-			rows = append(rows, diffRow{kind: line.Type, hunk: hunkIndex, line: n, content: line.Content})
+			rows = append(rows, diffRow{
+				kind:        line.Type,
+				hunk:        hunkIndex,
+				line:        n,
+				content:     line.Content,
+				uncommitted: hunk.Uncommitted,
+			})
 		}
 	}
 
@@ -52,7 +63,13 @@ func flatten(file models.DiffFile) []diffRow {
 func toWidgetRows(rows []diffRow) []widgets.DiffItem {
 	out := make([]widgets.DiffItem, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, widgets.DiffItem{Kind: row.kind, Hunk: row.hunk, Line: row.line, Content: row.content})
+		out = append(out, widgets.DiffItem{
+			Kind:        row.kind,
+			Hunk:        row.hunk,
+			Line:        row.line,
+			Content:     row.content,
+			Uncommitted: row.uncommitted,
+		})
 	}
 
 	return out

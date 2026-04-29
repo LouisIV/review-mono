@@ -10,9 +10,10 @@ import (
 
 const lineNumBlank = "    "
 const (
-	lineKindAdd    = "add"
-	lineKindRemove = "remove"
-	lineSign       = "▌"
+	lineKindAdd         = "add"
+	lineKindRemove      = "remove"
+	lineSign            = "▌"
+	uncommittedLineSign = "▒"
 )
 
 type FileItem struct {
@@ -24,10 +25,11 @@ type FileItem struct {
 }
 
 type DiffItem struct {
-	Kind    string
-	Hunk    int
-	Line    int
-	Content string
+	Kind        string
+	Hunk        int
+	Line        int
+	Content     string
+	Uncommitted bool
 }
 
 type CommentItem struct {
@@ -231,6 +233,9 @@ func renderRuntimeDiffLine(
 	case lineKindRemove:
 		sign = lineSign
 		signStyle = removeStyle
+	}
+	if row.Uncommitted && sign == lineSign {
+		sign = uncommittedLineSign
 	}
 
 	// Apply XOffset on the raw string before truncation and syntax coloring.

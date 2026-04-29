@@ -39,3 +39,28 @@ func TestRenderRuntimeDiffUsesAvailableRows(t *testing.T) {
 		t.Fatalf("rendered diff overflowed available rows:\n%s", out)
 	}
 }
+
+func TestRenderRuntimeDiffUsesUncommittedIndicator(t *testing.T) {
+	t.Parallel()
+
+	out := widgets.RenderReviewWorkspace(100, 28, widgets.WorkspaceData{
+		Branch:     "feature",
+		Base:       "main",
+		Status:     "in_review",
+		Files:      []widgets.FileItem{{Path: "file.go"}},
+		ActiveFile: "file.go",
+		Focus:      "diff",
+		Rows: []widgets.DiffItem{
+			{Kind: "add", Line: 1, Content: "committed"},
+			{Kind: "add", Line: 2, Content: "worktree", Uncommitted: true},
+		},
+	})
+
+	if !strings.Contains(out, "▌") {
+		t.Fatalf("rendered diff did not include committed indicator:\n%s", out)
+	}
+
+	if !strings.Contains(out, "▒") {
+		t.Fatalf("rendered diff did not include uncommitted indicator:\n%s", out)
+	}
+}
