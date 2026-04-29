@@ -62,7 +62,7 @@ func Save(repo git.Repo, cfg Config) error {
 func parse(content string) Config {
 	cfg := Config{}
 
-	for _, line := range strings.Split(content, "\n") {
+	for line := range strings.SplitSeq(content, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
@@ -73,8 +73,7 @@ func parse(content string) Config {
 			continue
 		}
 
-		switch strings.TrimSpace(key) {
-		case "defaultBranch":
+		if strings.TrimSpace(key) == "defaultBranch" {
 			cfg.DefaultBranch = strings.TrimSpace(val)
 		}
 	}

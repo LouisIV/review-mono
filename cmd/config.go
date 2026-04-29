@@ -127,7 +127,7 @@ func configUsage() {
 	fmt.Println("review config <subcommand>")
 	fmt.Println()
 	fmt.Println("Subcommands:")
-	fmt.Println("  show                      show current configuration")
+	fmt.Println("  show                      display current configuration")
 	fmt.Println("  set <key> <value>         set a repo-local config value")
 	fmt.Println()
 	fmt.Println("Keys:")
