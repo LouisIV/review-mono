@@ -59,16 +59,6 @@ func (r syntaxRenderer) renderLine(content string, bg lipgloss.Color) string {
 	return sb.String()
 }
 
-// searchRange returns the byte range [start, end) of the first case-insensitive
-// occurrence of query in s. Returns -1, -1 when not found or query is empty.
-func searchRange(s, query string) (int, int) {
-	if query == "" {
-		return -1, -1
-	}
-
-	return searchRangeLower(s, strings.ToLower(query))
-}
-
 func searchRangeLower(s, queryLower string) (int, int) {
 	if queryLower == "" {
 		return -1, -1

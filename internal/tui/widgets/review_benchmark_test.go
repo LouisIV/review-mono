@@ -1,3 +1,4 @@
+//nolint:testpackage
 package widgets
 
 import (
@@ -72,9 +73,9 @@ func benchmarkDiffItems(count int) []DiffItem {
 		kind := "context"
 		switch i % 9 {
 		case 0, 1:
-			kind = "add"
+			kind = lineKindAdd
 		case 2:
-			kind = "remove"
+			kind = lineKindRemove
 		}
 
 		rows = append(rows, DiffItem{
