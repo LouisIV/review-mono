@@ -10,6 +10,7 @@ import (
 	"review/internal/config"
 	"review/internal/daemon"
 	"review/internal/git"
+	"review/internal/repoconfig"
 )
 
 type globals struct {
@@ -85,6 +86,8 @@ func run(args []string, g globals, cfg config.Config) error {
 		return requestChangesCmd(args[1:], g)
 	case "watch":
 		return watchCmd(args[1:], g)
+	case "config":
+		return configCmd(args[1:], g, cfg)
 	case "lsp":
 		return lspCmd(args[1:], cfg)
 	case "tui":
@@ -137,14 +140,19 @@ func daemonCmd(args []string, g globals, cfg config.Config) error {
 }
 
 func openCmd(args []string, g globals, cfg config.Config) error {
-	base := cfg.DefaultBaseBranch
+	base := ""
+	baseFlagSet := false
 	pos := []string{}
 
 	for i := 0; i < len(args); i++ {
-		if args[i] == "--base" && i+1 < len(args) {
-			base = args[i+1]
-			i++
-		} else {
+		switch args[i] {
+		case "--base", "--branch":
+			if i+1 < len(args) {
+				base = args[i+1]
+				baseFlagSet = true
+				i++
+			}
+		default:
 			pos = append(pos, args[i])
 		}
 	}
@@ -160,6 +168,10 @@ func openCmd(args []string, g globals, cfg config.Config) error {
 	repo, err := git.Open(g.repo)
 	if err != nil {
 		return err
+	}
+
+	if !baseFlagSet {
+		base = resolveBaseBranch(repo, cfg)
 	}
 
 	c := client.New(g.port)
@@ -358,6 +370,7 @@ func rootCommands() []commandHelp {
 		{name: "approve", summary: "push and mark the review approved"},
 		{name: "request-changes", summary: "mark the review as changes requested"},
 		{name: "watch", summary: "stream review daemon events"},
+		{name: "config", summary: "show or set repo-local review configuration"},
 		{name: "lsp", summary: "list, discover, or install language servers"},
 		{name: "tui", summary: "open the keyboard-first review interface"},
 		{name: "widget", summary: "render or interact with TUI widget demos"},
@@ -367,4 +380,15 @@ func rootCommands() []commandHelp {
 func describeUsage() {
 	fmt.Println("review describe [--print] [--prompt <text>] [--provider <provider>]")
 	fmt.Println("providers: auto, anthropic, claude-cli, codex-cli, fallback")
+}
+
+// resolveBaseBranch returns the effective base branch for the given repo,
+// checking the repo-local config before falling back to the user config default.
+func resolveBaseBranch(repo git.Repo, cfg config.Config) string {
+	repoCfg, err := repoconfig.Load(repo)
+	if err == nil && repoCfg.DefaultBranch != "" {
+		return repoCfg.DefaultBranch
+	}
+
+	return cfg.DefaultBaseBranch
 }

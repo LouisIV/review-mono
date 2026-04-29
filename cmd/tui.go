@@ -12,16 +12,18 @@ import (
 )
 
 func tuiCmd(args []string, g globals, cfg config.Config) error {
-	base := cfg.DefaultBaseBranch
+	base := ""
+	baseFlagSet := false
 	pos := []string{}
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
-		case "--base":
+		case "--base", "--branch":
 			if i+1 >= len(args) {
-				return errors.New("--base requires a branch")
+				return errors.New(args[i] + " requires a branch name")
 			}
 			base = args[i+1]
+			baseFlagSet = true
 			i++
 		default:
 			if isHelpArg(args[i]) {
@@ -41,6 +43,11 @@ func tuiCmd(args []string, g globals, cfg config.Config) error {
 	if err != nil {
 		return err
 	}
+
+	if !baseFlagSet {
+		base = resolveBaseBranch(repo, cfg)
+	}
+
 	if err := ensureDaemon(g.port); err != nil {
 		return err
 	}
@@ -76,6 +83,12 @@ func currentSessionOrOpen(repo git.Repo, c client.Client, base string) (models.S
 }
 
 func tuiUsage() {
-	fmt.Println("review tui [repo] [--base <branch>]")
+	fmt.Println("review tui [repo] [--branch <branch>]")
 	fmt.Println("opens or creates the current branch review session in a keyboard-first TUI")
+	fmt.Println()
+	fmt.Println("Flags:")
+	fmt.Println("  --branch <branch>   base branch to diff against (overrides repo and user config)")
+	fmt.Println("  --base <branch>     alias for --branch")
+	fmt.Println()
+	fmt.Println("Branch resolution order: --branch flag > .git/review/config.yaml > user config > main")
 }
