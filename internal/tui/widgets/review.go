@@ -155,7 +155,7 @@ func renderRuntimeDiff(width, height int, data WorkspaceData) string {
 	if data.Top > 0 && data.Top < len(visible) {
 		visible = visible[data.Top:]
 	}
-	maxRows := max(height-4, 1)
+	maxRows := max(height-2, 1)
 	if len(visible) > maxRows {
 		visible = visible[:maxRows]
 	}
