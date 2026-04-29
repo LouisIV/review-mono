@@ -73,7 +73,7 @@ func (w Diff) content() string {
 }
 
 func (w Diff) renderHunk(header string) string {
-	return hunkStyle.Render(fmt.Sprintf("      %4s %4s   %s", "", "", compactHunk(header)))
+	return hunkStyle.Render("          " + compactHunk(header))
 }
 
 func (w Diff) renderLine(row diffRow) string {
@@ -86,8 +86,10 @@ func (w Diff) renderLine(row diffRow) string {
 		marker = "|"
 	}
 
-	oldLine := fmt.Sprintf("%4d", row.Line)
-	newLine := fmt.Sprintf("%4d", row.Line)
+	line := lineNumBlank
+	if row.Line > 0 {
+		line = fmt.Sprintf("%4d", row.Line)
+	}
 
 	isSelected := row.Line == w.props.SelectedLine
 	var bg lipgloss.Color
@@ -96,7 +98,6 @@ func (w Diff) renderLine(row diffRow) string {
 
 	switch row.Kind {
 	case "add":
-		oldLine = lineNumBlank
 		sign = "▌"
 		signStyle = addStyle
 		if !isSelected {
@@ -104,7 +105,6 @@ func (w Diff) renderLine(row diffRow) string {
 			signStyle = addStyle.Background(addBg)
 		}
 	case "remove":
-		newLine = lineNumBlank
 		sign = "▌"
 		signStyle = removeStyle
 		if !isSelected {
@@ -123,7 +123,7 @@ func (w Diff) renderLine(row diffRow) string {
 	raw := strings.ReplaceAll(row.Content, "\t", lineNumBlank)
 	content := renderSyntaxLine(w.props.ActiveFile, raw, w.props.Query, bg)
 	comment := w.commentBadge(row.Line)
-	gutter := gutterStyle.Render(fmt.Sprintf("%s %s %s", marker, oldLine, newLine))
+	gutter := gutterStyle.Render(fmt.Sprintf("%s %s", marker, line))
 	rendered := gutter + bgStyle.Render("  ") + signStyle.Render(sign) + bgStyle.Render(" ") + content + comment
 
 	if isSelected {
