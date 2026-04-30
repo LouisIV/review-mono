@@ -113,6 +113,7 @@ type model struct {
 	composer       textarea.Model
 	commentActions bool
 	commentAction  int
+	editCommentID  string
 	request        textarea.Model
 
 	description string

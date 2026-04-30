@@ -35,6 +35,7 @@ func (m *model) widgetComments() []widgets.CommentItem {
 			File:     comment.File,
 			Line:     comment.Line,
 			EndLine:  end,
+			Author:   comment.Author,
 			Body:     comment.Body,
 			Resolved: comment.Resolved,
 		})

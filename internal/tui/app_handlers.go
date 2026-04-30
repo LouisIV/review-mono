@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	keyEsc   = "esc"
-	keyDown  = "down"
-	keyUp    = "up"
-	keyEnter = "enter"
+	keyEsc                    = "esc"
+	keyDown                   = "down"
+	keyUp                     = "up"
+	keyEnter                  = "enter"
+	statusNoUnresolvedComment = "no unresolved comment on selected line"
 )
 
 var ( //nolint:gochecknoglobals
@@ -129,11 +130,7 @@ func (m *model) handleReviewKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.visualEnd = 0
 	case "c":
 		if m.currentFile() != "" {
-			m.mode = modeComment
-			m.composer.SetValue("")
-			m.composer.Focus()
-			m.commentActions = false
-			m.commentAction = 0
+			m.openCommentComposer("", "")
 			m.status = "comment composer"
 		}
 	case "r":
@@ -214,6 +211,7 @@ func (m *model) handleCommentKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case keyEsc:
 			m.mode = modeReview
 			m.commentActions = false
+			m.editCommentID = ""
 		case keyUp, "k":
 			m.commentActions = false
 		case "left", "h", "right", "l", "tab":
@@ -226,6 +224,7 @@ func (m *model) handleCommentKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if m.commentAction == 1 {
 				m.mode = modeReview
 				m.commentActions = false
+				m.editCommentID = ""
 
 				return m, nil
 			}
@@ -239,6 +238,7 @@ func (m *model) handleCommentKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch key.String() {
 	case keyEsc:
 		m.mode = modeReview
+		m.editCommentID = ""
 	case keyDown:
 		if m.composerAtLastInputLine() {
 			m.commentActions = true
@@ -282,6 +282,15 @@ func (m *model) submitComment() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	comment := models.Comment{File: m.currentFile(), Line: m.currentLine(), Body: body, Author: models.AuthorHuman}
+	if m.editCommentID != "" {
+		id := m.editCommentID
+		m.mode = modeReview
+		m.commentActions = false
+		m.editCommentID = ""
+
+		return m, patchCommentBody(m.opts, id, body)
+	}
+
 	if m.focus == focusFiles {
 		comment.Line = 0
 	}
@@ -367,13 +376,19 @@ func (m *model) handleContextKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.mode = modeReview
 		switch action {
 		case "Add comment", "Comment on selection":
-			m.mode = modeComment
-			m.composer.SetValue("")
-			m.composer.Focus()
-			m.commentActions = false
-			m.commentAction = 0
-		case "Resolve comment":
+			m.openCommentComposer("", "")
+		case "Resolve":
 			return m.resolveCurrent()
+		case "Edit":
+			comment := m.currentComment()
+			if comment.ID == "" {
+				m.status = statusNoUnresolvedComment
+
+				return m, nil
+			}
+			m.openCommentComposer(comment.ID, comment.Body)
+		case "Delete":
+			return m.deleteCurrent()
 		case "Go to file":
 			m.mode = modeGoto
 			m.gotoInput.SetValue("")
@@ -387,10 +402,19 @@ func (m *model) handleContextKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m *model) openCommentComposer(commentID, body string) {
+	m.mode = modeComment
+	m.composer.SetValue(body)
+	m.composer.Focus()
+	m.commentActions = false
+	m.commentAction = 0
+	m.editCommentID = commentID
+}
+
 func (m *model) resolveCurrent() (tea.Model, tea.Cmd) {
 	comment := m.currentComment()
 	if comment.ID == "" {
-		m.status = "no unresolved comment on selected line"
+		m.status = statusNoUnresolvedComment
 
 		return m, nil
 	}
@@ -404,6 +428,34 @@ func (m *model) resolveCurrent() (tea.Model, tea.Cmd) {
 		}
 
 		return commentsLoadedMsg{comments: mustComments(m.opts), status: "comment resolved"}
+	}
+}
+
+func (m *model) deleteCurrent() (tea.Model, tea.Cmd) {
+	comment := m.currentComment()
+	if comment.ID == "" {
+		m.status = statusNoUnresolvedComment
+
+		return m, nil
+	}
+
+	return m, func() tea.Msg {
+		if err := m.opts.Client.DeleteComment(m.opts.RepoPath, m.opts.Session, comment.ID); err != nil {
+			return errMsg{err}
+		}
+
+		return commentsLoadedMsg{comments: mustComments(m.opts), status: "comment deleted"}
+	}
+}
+
+func patchCommentBody(opts Options, id, body string) tea.Cmd {
+	return func() tea.Msg {
+		_, err := opts.Client.PatchComment(opts.RepoPath, opts.Session, id, map[string]string{"body": body})
+		if err != nil {
+			return errMsg{err}
+		}
+
+		return commentsLoadedMsg{comments: mustComments(opts), status: "comment updated"}
 	}
 }
 

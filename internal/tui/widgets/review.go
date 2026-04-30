@@ -37,6 +37,7 @@ type CommentItem struct {
 	File     string
 	Line     int
 	EndLine  int
+	Author   string
 	Body     string
 	Resolved bool
 }
@@ -347,6 +348,9 @@ func renderCommentRows(data WorkspaceData) []string {
 		loc := fmt.Sprintf("%s:%d", comment.File, comment.Line)
 		if comment.EndLine > comment.Line {
 			loc = fmt.Sprintf("%s:%d-%d", comment.File, comment.Line, comment.EndLine)
+		}
+		if comment.Author != "" {
+			loc += "  " + mutedStyle.Render(comment.Author)
 		}
 		rows = append(rows, fmt.Sprintf("%s  %s  %s", comment.ID, state, loc))
 		rows = append(rows, mutedStyle.Render("  "+comment.Body))

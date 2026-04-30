@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+
+	"review/internal/models"
 )
 
 func TestCommentDownMovesWithinComposerBeforeLastLine(t *testing.T) {
@@ -74,6 +76,74 @@ func TestDiffHeightMatchesRenderedViewportRows(t *testing.T) {
 
 	if got, want := m.diffHeight(), 13; got != want {
 		t.Fatalf("diffHeight() = %d, want %d", got, want)
+	}
+}
+
+func TestBottomBodyAllowsCurrentFileCommentsToRender(t *testing.T) {
+	t.Parallel()
+	m := newModel(Options{})
+	m.files = []models.DiffFile{{Path: "a.go"}}
+	m.comments = []models.Comment{{ID: "C1", File: "a.go", Line: 3, Body: "looks off"}}
+
+	if got := m.bottomBody(); got != "" {
+		t.Fatalf("bottomBody() = %q, want comments fallback", got)
+	}
+}
+
+func TestBottomBodyShowsCommentHintWithoutCurrentFileComments(t *testing.T) {
+	t.Parallel()
+	m := newModel(Options{})
+	m.files = []models.DiffFile{{Path: "a.go"}}
+	m.rows = []diffRow{{line: 3}}
+
+	got := m.bottomBody()
+	if !strings.Contains(got, "Press c to add a comment") {
+		t.Fatalf("bottomBody() = %q, want comment hint", got)
+	}
+}
+
+func TestContextEditPrefillsCommentComposer(t *testing.T) {
+	t.Parallel()
+	m := newModel(Options{})
+	m.files = []models.DiffFile{{Path: "a.go"}}
+	m.rows = []diffRow{{line: 7}}
+	m.comments = []models.Comment{{ID: "C1", File: "a.go", Line: 7, Body: "old body"}}
+	m.mode = modeContext
+	m.context = []string{"Edit"}
+
+	next, cmd := m.handleContextKey(tea.KeyMsg{Type: tea.KeyEnter})
+	got := next.(*model) //nolint:forcetypeassert
+
+	if cmd != nil {
+		t.Fatal("edit context action returned a command")
+	}
+	if got.mode != modeComment {
+		t.Fatalf("mode = %v, want modeComment", got.mode)
+	}
+	if got.editCommentID != "C1" {
+		t.Fatalf("editCommentID = %q, want C1", got.editCommentID)
+	}
+	if got.composer.Value() != "old body" {
+		t.Fatalf("composer value = %q, want old body", got.composer.Value())
+	}
+}
+
+func TestSubmitCommentEditReturnsPatchCommand(t *testing.T) {
+	t.Parallel()
+	m := newCommentTestModel("new body")
+	m.editCommentID = "C1"
+
+	next, cmd := m.submitComment()
+	got := next.(*model) //nolint:forcetypeassert
+
+	if cmd == nil {
+		t.Fatal("submit edit returned nil command")
+	}
+	if got.mode != modeReview {
+		t.Fatalf("mode = %v, want modeReview", got.mode)
+	}
+	if got.editCommentID != "" {
+		t.Fatalf("editCommentID = %q, want empty", got.editCommentID)
 	}
 }
 
