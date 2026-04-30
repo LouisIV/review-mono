@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"review/internal/config"
@@ -14,6 +15,7 @@ import (
 	"review/internal/ids"
 	"review/internal/models"
 	"review/internal/store"
+	"review/internal/watcher"
 )
 
 const queryTrue = "true"
@@ -22,10 +24,21 @@ type Server struct {
 	cfg config.Config
 	bus *events.Bus
 	mux *http.ServeMux
+
+	// watcherPool manages file watchers per repository.
+	watcherMu   sync.Mutex
+	watchers    map[string]*watcher.Watcher
+	watcherSubs map[string]int
 }
 
 func New(cfg config.Config) *Server {
-	s := &Server{cfg: cfg, bus: events.NewBus(), mux: http.NewServeMux()}
+	s := &Server{
+		cfg:         cfg,
+		bus:         events.NewBus(),
+		mux:         http.NewServeMux(),
+		watchers:    make(map[string]*watcher.Watcher),
+		watcherSubs: make(map[string]int),
+	}
 	s.routes()
 
 	return s
@@ -72,14 +85,33 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get repo filter from query params
+	repoFilter := r.URL.Query().Get("repo")
+
+	// Start watcher if repo is specified
+	var cleanup func()
+	if repoFilter != "" {
+		cleanup = s.startWatcherForRepo(repoFilter)
+	}
+
 	id, ch := s.bus.Subscribe()
-	defer s.bus.Unsubscribe(id)
+	defer func() {
+		s.bus.Unsubscribe(id)
+		if cleanup != nil {
+			cleanup()
+		}
+	}()
 
 	for {
 		select {
 		case <-r.Context().Done():
 			return
 		case event := <-ch:
+			// Filter events by repo if specified
+			if repoFilter != "" && event.Repo != repoFilter {
+				continue
+			}
+
 			b, err := json.Marshal(event)
 			if err != nil {
 				continue
@@ -89,6 +121,51 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			flusher.Flush()
+		}
+	}
+}
+
+// startWatcherForRepo ensures a watcher exists for the given repo.
+// Returns a cleanup function to call when the SSE connection closes.
+func (s *Server) startWatcherForRepo(repo string) func() {
+	s.watcherMu.Lock()
+	defer s.watcherMu.Unlock()
+
+	if _, ok := s.watchers[repo]; ok {
+		s.watcherSubs[repo]++
+
+		return func() { s.removeWatcherSubscription(repo) }
+	}
+
+	w := watcher.New(repo, s.bus, "")
+	if err := w.Start(); err != nil {
+		_ = err
+
+		return func() {}
+	}
+
+	s.watchers[repo] = w
+	s.watcherSubs[repo] = 1
+
+	return func() { s.removeWatcherSubscription(repo) }
+}
+
+// removeWatcherSubscription decrements the subscriber count and stops the watcher if it was the last subscriber.
+func (s *Server) removeWatcherSubscription(repo string) {
+	s.watcherMu.Lock()
+	defer s.watcherMu.Unlock()
+
+	subs := s.watcherSubs[repo]
+	if subs > 0 {
+		subs--
+		s.watcherSubs[repo] = subs
+	}
+
+	if subs == 0 {
+		if w, ok := s.watchers[repo]; ok {
+			w.Stop()
+			delete(s.watchers, repo)
+			delete(s.watcherSubs, repo)
 		}
 	}
 }

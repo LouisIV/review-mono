@@ -11,6 +11,16 @@ import (
 	"review/internal/tui/widgets"
 )
 
+type refreshPosition struct {
+	preserve  bool
+	file      string
+	fileIndex int
+	line      int
+	row       int
+	top       int
+	xOffset   int
+}
+
 func (m *model) resizeInputs() {
 	w := m.width - 8
 	w = max(w, 20)
@@ -83,6 +93,159 @@ func firstSelectable(rows []diffRow) int {
 	}
 
 	return 0
+}
+
+func (m *model) refreshPosition() refreshPosition {
+	return refreshPosition{
+		preserve:  true,
+		file:      m.currentFile(),
+		fileIndex: m.fileIndex,
+		line:      m.currentLine(),
+		row:       m.lineIndex,
+		top:       m.top,
+		xOffset:   m.xOffset,
+	}
+}
+
+func (m *model) fileIndexForPath(path string, fallback int) int {
+	return fileIndexForPath(m.files, path, fallback)
+}
+
+func fileIndexForPath(files []models.DiffFile, path string, fallback int) int {
+	for i, file := range files {
+		if file.Path == path {
+			return i
+		}
+	}
+	if fallback < 0 {
+		if len(files) == 0 {
+			return -1
+		}
+
+		return 0
+	}
+	if fallback >= len(files) {
+		return len(files) - 1
+	}
+
+	return fallback
+}
+
+func (m *model) applyReviewData(
+	session models.Session,
+	commits []models.Commit,
+	files []models.DiffFile,
+	comments []models.Comment,
+	refresh refreshPosition,
+) {
+	m.session = session
+	m.opts.Session = session
+	m.commits = commits
+	m.files = files
+	m.comments = comments
+	if len(m.files) > 0 {
+		index := 0
+		if refresh.preserve {
+			index = m.fileIndexForPath(refresh.file, refresh.fileIndex)
+		}
+		m.fileIndex = index
+		m.viewed[m.files[index].Path] = true
+
+		return
+	}
+
+	m.rows = nil
+	m.diffItems = nil
+	m.fileIndex = 0
+	m.lineIndex = 0
+	m.top = 0
+	m.xOffset = 0
+	m.status = "no changed files"
+}
+
+func (m *model) restoreRefreshPosition(refresh refreshPosition) {
+	if len(m.rows) == 0 {
+		m.lineIndex = 0
+		m.top = 0
+		m.xOffset = 0
+
+		return
+	}
+
+	if !refresh.preserve {
+		m.lineIndex = firstSelectable(m.rows)
+		m.top = 0
+		m.xOffset = 0
+
+		return
+	}
+
+	m.lineIndex = closestRowForLine(m.rows, refresh.line, refresh.row)
+	if refresh.top < 0 {
+		refresh.top = 0
+	}
+	if refresh.top >= len(m.rows) {
+		refresh.top = len(m.rows) - 1
+	}
+	m.top = refresh.top
+	m.xOffset = max(refresh.xOffset, 0)
+	m.ensureVisible()
+}
+
+func (m *model) shouldDelayRefresh() bool {
+	return m.mode != modeReview
+}
+
+func (m *model) applyPendingRefresh(cmd tea.Cmd) (tea.Model, tea.Cmd) {
+	if m.mode != modeReview || !m.pendingRefresh {
+		return m, cmd
+	}
+
+	m.pendingRefresh = false
+	m.status = "refreshing review..."
+	refreshCmd := liveRefresh(m.opts, m.refreshPosition())
+	if cmd != nil {
+		return m, tea.Batch(cmd, refreshCmd)
+	}
+
+	return m, refreshCmd
+}
+
+func closestRowForLine(rows []diffRow, line int, fallback int) int {
+	if line > 0 {
+		bestIndex := -1
+		bestDistance := int(^uint(0) >> 1)
+		for i, row := range rows {
+			if row.line <= 0 {
+				continue
+			}
+			distance := abs(row.line - line)
+			if distance < bestDistance {
+				bestIndex = i
+				bestDistance = distance
+			}
+			if distance == 0 {
+				break
+			}
+		}
+		if bestIndex >= 0 {
+			return bestIndex
+		}
+	}
+
+	if fallback >= 0 && fallback < len(rows) {
+		return fallback
+	}
+
+	return firstSelectable(rows)
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+
+	return n
 }
 
 func (m *model) moveLine(delta int) {

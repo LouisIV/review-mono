@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -195,7 +196,7 @@ func watchCmd(args []string, g globals) error {
 		return err
 	}
 
-	return client.New(g.port).Watch(func(event models.Event) bool {
+	return client.New(g.port).Watch(context.Background(), "", func(event models.Event) bool {
 		if eventFilter == "" || event.Event == eventFilter {
 			b, _ := json.Marshal(event)
 			fmt.Println(string(b))

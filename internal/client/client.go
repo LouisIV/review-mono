@@ -226,14 +226,30 @@ func (c Client) RequestChanges(repo, message string) (models.Session, error) {
 	return out, err
 }
 
-func (c Client) Watch(onEvent func(models.Event) bool) error {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, c.BaseURL+"/events", nil)
+func (c Client) Watch(ctx context.Context, repo string, onEvent func(models.Event) bool) error {
+	path := "/events"
+	if repo != "" {
+		path = "/events?repo=" + url.QueryEscape(repo)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+path, nil)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.HTTP.Do(req)
+	httpClient := http.DefaultClient
+	if c.HTTP != nil {
+		streamClient := *c.HTTP
+		streamClient.Timeout = 0
+		httpClient = &streamClient
+	}
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
+		if ctx.Err() != nil {
+			return nil
+		}
+
 		return err
 	}
 	defer func() {
@@ -267,7 +283,11 @@ func (c Client) Watch(onEvent func(models.Event) bool) error {
 		}
 	}
 
-	return sc.Err()
+	if err := sc.Err(); err != nil && ctx.Err() == nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c Client) do(method, path string, payload any, target any) error {

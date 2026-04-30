@@ -1,8 +1,10 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -24,9 +26,15 @@ type Options struct {
 
 func Run(opts Options) error {
 	m := newModel(opts)
-	final, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
-	if fm, ok := final.(*model); ok && fm.lspManager != nil {
-		fm.lspManager.Close()
+	p := tea.NewProgram(m, tea.WithAltScreen())
+	m.program = p
+
+	final, err := p.Run()
+	if fm, ok := final.(*model); ok {
+		if fm.lspManager != nil {
+			fm.lspManager.Close()
+		}
+		fm.stopWatcher()
 	}
 
 	return err
@@ -65,18 +73,25 @@ type diffRow struct {
 }
 
 type model struct {
-	opts     Options
-	width    int
-	height   int
-	mode     mode
-	focus    focus
-	loading  bool
-	status   string
-	err      error
-	session  models.Session
-	commits  []models.Commit
-	files    []models.DiffFile
-	comments []models.Comment
+	opts           Options
+	width          int
+	height         int
+	mode           mode
+	focus          focus
+	loading        bool
+	status         string
+	err            error
+	session        models.Session
+	commits        []models.Commit
+	files          []models.DiffFile
+	comments       []models.Comment
+	pendingRefresh bool
+
+	// Watcher handles
+	program     *tea.Program
+	watchCtx    context.Context
+	watchCancel context.CancelFunc
+	watchWg     sync.WaitGroup
 
 	fileIndex int
 	rows      []diffRow
@@ -136,6 +151,8 @@ func newModel(opts Options) *model {
 }
 
 func (m *model) Init() tea.Cmd {
+	m.startWatcher()
+
 	return loadReview(m.opts)
 }
 
@@ -144,12 +161,23 @@ type loadedMsg struct {
 	commits  []models.Commit
 	files    []models.DiffFile
 	comments []models.Comment
+	refresh  refreshPosition
 }
 
 type errMsg struct{ err error }
 
 type fileLoadedMsg struct {
-	file models.DiffFile
+	file    models.DiffFile
+	refresh refreshPosition
+}
+
+type liveRefreshMsg struct {
+	session  models.Session
+	commits  []models.Commit
+	files    []models.DiffFile
+	comments []models.Comment
+	file     *models.DiffFile
+	refresh  refreshPosition
 }
 
 type commentsLoadedMsg struct {
@@ -164,6 +192,11 @@ type sessionMsg struct {
 
 type descriptionMsg struct {
 	body string
+}
+
+// watcherEventMsg is received when the daemon reports a filesystem change.
+type watcherEventMsg struct {
+	event models.Event
 }
 
 type hoverMsg struct {
@@ -181,28 +214,33 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case loadedMsg:
 		m.loading = false
 		m.err = nil
-		m.session = msg.session
-		m.opts.Session = msg.session
-		m.commits = msg.commits
-		m.files = msg.files
-		m.comments = msg.comments
-		if len(m.files) > 0 {
-			m.viewed[m.files[0].Path] = true
-
-			return m, loadFile(m.opts, m.files[0].Path)
+		m.applyReviewData(msg.session, msg.commits, msg.files, msg.comments, msg.refresh)
+		if len(m.files) == 0 {
+			return m, nil
 		}
-		m.status = "no changed files"
 
-		return m, nil
+		return m, loadFileAt(m.opts, m.files[m.fileIndex].Path, msg.refresh)
 	case fileLoadedMsg:
 		m.replaceFile(msg.file)
 		m.rows = flatten(msg.file)
 		m.diffItems = toWidgetRows(m.rows)
-		m.lineIndex = firstSelectable(m.rows)
-		m.top = 0
-		m.xOffset = 0
+		m.restoreRefreshPosition(msg.refresh)
 		m.status = "loaded " + msg.file.Path
 		m.updateMatches()
+
+		return m, nil
+	case liveRefreshMsg:
+		m.loading = false
+		m.err = nil
+		m.applyReviewData(msg.session, msg.commits, msg.files, msg.comments, msg.refresh)
+		if msg.file != nil {
+			m.replaceFile(*msg.file)
+			m.rows = flatten(*msg.file)
+			m.diffItems = toWidgetRows(m.rows)
+			m.restoreRefreshPosition(msg.refresh)
+			m.status = "loaded " + msg.file.Path
+			m.updateMatches()
+		}
 
 		return m, nil
 	case commentsLoadedMsg:
@@ -216,7 +254,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.status = msg.status
 		m.mode = modeReview
 
-		return m, nil
+		return m.applyPendingRefresh(nil)
 	case descriptionMsg:
 		m.description = msg.body
 		if strings.TrimSpace(m.description) == "" {
@@ -234,6 +272,17 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.status = msg.err.Error()
 
 		return m, nil
+	case watcherEventMsg:
+		if m.shouldDelayRefresh() {
+			m.pendingRefresh = true
+			m.status = "changes pending; finish current action to refresh"
+
+			return m, nil
+		}
+
+		m.status = "refreshing review..."
+
+		return m, liveRefresh(m.opts, m.refreshPosition())
 	case tea.KeyMsg:
 		return m.handleKey(msg)
 	}
@@ -295,6 +344,10 @@ func (m *model) View() string {
 }
 
 func loadReview(opts Options) tea.Cmd {
+	return loadReviewAt(opts, refreshPosition{})
+}
+
+func loadReviewAt(opts Options, refresh refreshPosition) tea.Cmd {
 	return func() tea.Msg {
 		session, err := opts.Client.Session(opts.RepoPath, opts.Session)
 		if err != nil {
@@ -316,11 +369,15 @@ func loadReview(opts Options) tea.Cmd {
 			return errMsg{err}
 		}
 
-		return loadedMsg{session: session, commits: commits, files: files, comments: comments}
+		return loadedMsg{session: session, commits: commits, files: files, comments: comments, refresh: refresh}
 	}
 }
 
 func loadFile(opts Options, path string) tea.Cmd {
+	return loadFileAt(opts, path, refreshPosition{})
+}
+
+func loadFileAt(opts Options, path string, refresh refreshPosition) tea.Cmd {
 	return func() tea.Msg {
 		files, _, err := opts.Client.Diff(opts.RepoPath, opts.Session, path, "", false)
 		if err != nil {
@@ -330,7 +387,52 @@ func loadFile(opts Options, path string) tea.Cmd {
 			return errMsg{fmt.Errorf("no diff for %s", path)}
 		}
 
-		return fileLoadedMsg{file: files[0]}
+		return fileLoadedMsg{file: files[0], refresh: refresh}
+	}
+}
+
+func liveRefresh(opts Options, refresh refreshPosition) tea.Cmd {
+	return func() tea.Msg {
+		session, err := opts.Client.Session(opts.RepoPath, opts.Session)
+		if err != nil {
+			return errMsg{err}
+		}
+
+		commits, err := opts.Client.Commits(opts.RepoPath, session)
+		if err != nil {
+			return errMsg{err}
+		}
+
+		files, _, err := opts.Client.Diff(opts.RepoPath, session, "", "", true)
+		if err != nil {
+			return errMsg{err}
+		}
+
+		comments, err := opts.Client.Comments(opts.RepoPath, session, nil)
+		if err != nil {
+			return errMsg{err}
+		}
+
+		index := fileIndexForPath(files, refresh.file, refresh.fileIndex)
+		var file *models.DiffFile
+		if index >= 0 {
+			detailed, _, err := opts.Client.Diff(opts.RepoPath, session, files[index].Path, "", false)
+			if err != nil {
+				return errMsg{err}
+			}
+			if len(detailed) > 0 {
+				file = &detailed[0]
+			}
+		}
+
+		return liveRefreshMsg{
+			session:  session,
+			commits:  commits,
+			files:    files,
+			comments: comments,
+			file:     file,
+			refresh:  refresh,
+		}
 	}
 }
 
@@ -390,4 +492,38 @@ func loadHover(opts Options, mgr *lsp.Manager, file string, line int) tea.Cmd {
 
 		return hoverMsg{text: text}
 	}
+}
+
+// startWatcher subscribes to daemon events for live updates.
+func (m *model) startWatcher() {
+	if m.program == nil {
+		return
+	}
+
+	m.watchCtx, m.watchCancel = context.WithCancel(context.Background())
+
+	m.watchWg.Add(1)
+	go func() {
+		defer m.watchWg.Done()
+
+		err := m.opts.Client.Watch(m.watchCtx, m.opts.RepoPath, func(event models.Event) bool {
+			select {
+			case <-m.watchCtx.Done():
+				return false
+			default:
+				m.program.Send(watcherEventMsg{event: event})
+
+				return true
+			}
+		})
+		_ = err
+	}()
+}
+
+// stopWatcher stops the watcher goroutine.
+func (m *model) stopWatcher() {
+	if m.watchCancel != nil {
+		m.watchCancel()
+	}
+	m.watchWg.Wait()
 }
