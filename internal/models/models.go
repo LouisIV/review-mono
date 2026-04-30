@@ -66,6 +66,7 @@ type DiffFile struct {
 type Event struct {
 	Event     string    `json:"event"`
 	SessionID string    `json:"session_id,omitempty"`
+	Repo      string    `json:"repo,omitempty"`
 	CommentID string    `json:"comment_id,omitempty"`
 	Message   string    `json:"message,omitempty"`
 	Timestamp time.Time `json:"timestamp"`

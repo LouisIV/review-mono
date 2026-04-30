@@ -32,30 +32,29 @@ func (m *model) handleKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	}
 
+	var cmd tea.Cmd
 	switch m.mode {
 	case modeReview:
-		return m.handleReviewKey(key)
+		_, cmd = m.handleReviewKey(key)
 	case modeGoto:
-		return m.handleGotoKey(key)
+		_, cmd = m.handleGotoKey(key)
 	case modeSearch:
-		return m.handleSearchKey(key)
+		_, cmd = m.handleSearchKey(key)
 	case modeComment:
-		return m.handleCommentKey(key)
+		_, cmd = m.handleCommentKey(key)
 	case modeRequestChanges:
-		return m.handleRequestKey(key)
+		_, cmd = m.handleRequestKey(key)
 	case modeConfirmApprove, modeConfirmRequest:
-		return m.handleConfirmKey(key)
+		_, cmd = m.handleConfirmKey(key)
 	case modeContext:
-		return m.handleContextKey(key)
+		_, cmd = m.handleContextKey(key)
 	case modeHelp, modeDescription, modeHover:
 		if key.String() == keyEsc || key.String() == "q" || key.String() == "?" {
 			m.mode = modeReview
 		}
-
-		return m, nil
 	}
 
-	return m, nil
+	return m.applyPendingRefresh(cmd)
 }
 
 func (m *model) handleReviewKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {

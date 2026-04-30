@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -10,6 +9,16 @@ import (
 	"review/internal/models"
 	"review/internal/tui/widgets"
 )
+
+type refreshPosition struct {
+	preserve  bool
+	file      string
+	fileIndex int
+	line      int
+	row       int
+	top       int
+	xOffset   int
+}
 
 func (m *model) resizeInputs() {
 	w := m.width - 8
@@ -83,6 +92,159 @@ func firstSelectable(rows []diffRow) int {
 	}
 
 	return 0
+}
+
+func (m *model) refreshPosition() refreshPosition {
+	return refreshPosition{
+		preserve:  true,
+		file:      m.currentFile(),
+		fileIndex: m.fileIndex,
+		line:      m.currentLine(),
+		row:       m.lineIndex,
+		top:       m.top,
+		xOffset:   m.xOffset,
+	}
+}
+
+func (m *model) fileIndexForPath(path string, fallback int) int {
+	return fileIndexForPath(m.files, path, fallback)
+}
+
+func fileIndexForPath(files []models.DiffFile, path string, fallback int) int {
+	for i, file := range files {
+		if file.Path == path {
+			return i
+		}
+	}
+	if fallback < 0 {
+		if len(files) == 0 {
+			return -1
+		}
+
+		return 0
+	}
+	if fallback >= len(files) {
+		return len(files) - 1
+	}
+
+	return fallback
+}
+
+func (m *model) applyReviewData(
+	session models.Session,
+	commits []models.Commit,
+	files []models.DiffFile,
+	comments []models.Comment,
+	refresh refreshPosition,
+) {
+	m.session = session
+	m.opts.Session = session
+	m.commits = commits
+	m.files = files
+	m.comments = comments
+	if len(m.files) > 0 {
+		index := 0
+		if refresh.preserve {
+			index = m.fileIndexForPath(refresh.file, refresh.fileIndex)
+		}
+		m.fileIndex = index
+		m.viewed[m.files[index].Path] = true
+
+		return
+	}
+
+	m.rows = nil
+	m.diffItems = nil
+	m.fileIndex = 0
+	m.lineIndex = 0
+	m.top = 0
+	m.xOffset = 0
+	m.status = "no changed files"
+}
+
+func (m *model) restoreRefreshPosition(refresh refreshPosition) {
+	if len(m.rows) == 0 {
+		m.lineIndex = 0
+		m.top = 0
+		m.xOffset = 0
+
+		return
+	}
+
+	if !refresh.preserve {
+		m.lineIndex = firstSelectable(m.rows)
+		m.top = 0
+		m.xOffset = 0
+
+		return
+	}
+
+	m.lineIndex = closestRowForLine(m.rows, refresh.line, refresh.row)
+	if refresh.top < 0 {
+		refresh.top = 0
+	}
+	if refresh.top >= len(m.rows) {
+		refresh.top = len(m.rows) - 1
+	}
+	m.top = refresh.top
+	m.xOffset = max(refresh.xOffset, 0)
+	m.ensureVisible()
+}
+
+func (m *model) shouldDelayRefresh() bool {
+	return m.mode != modeReview
+}
+
+func (m *model) applyPendingRefresh(cmd tea.Cmd) (tea.Model, tea.Cmd) {
+	if m.mode != modeReview || !m.pendingRefresh {
+		return m, cmd
+	}
+
+	m.pendingRefresh = false
+	m.status = "refreshing review..."
+	refreshCmd := liveRefresh(m.opts, m.refreshPosition())
+	if cmd != nil {
+		return m, tea.Batch(cmd, refreshCmd)
+	}
+
+	return m, refreshCmd
+}
+
+func closestRowForLine(rows []diffRow, line int, fallback int) int {
+	if line > 0 {
+		bestIndex := -1
+		bestDistance := int(^uint(0) >> 1)
+		for i, row := range rows {
+			if row.line <= 0 {
+				continue
+			}
+			distance := abs(row.line - line)
+			if distance < bestDistance {
+				bestIndex = i
+				bestDistance = distance
+			}
+			if distance == 0 {
+				break
+			}
+		}
+		if bestIndex >= 0 {
+			return bestIndex
+		}
+	}
+
+	if fallback >= 0 && fallback < len(rows) {
+		return fallback
+	}
+
+	return firstSelectable(rows)
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+
+	return n
 }
 
 func (m *model) moveLine(delta int) {
@@ -292,149 +454,6 @@ func (m *model) openContext() {
 	m.context = widgets.ActionsForTarget(target)
 	m.contextIdx = 0
 	m.mode = modeContext
-}
-
-func (m *model) widgetFiles() []widgets.FileItem {
-	unresolved := map[string]int{}
-	for _, comment := range m.comments {
-		if !comment.Resolved {
-			unresolved[comment.File]++
-		}
-	}
-	out := make([]widgets.FileItem, 0, len(m.files))
-	for _, file := range m.files {
-		out = append(out, widgets.FileItem{
-			Path:       file.Path,
-			Additions:  file.Additions,
-			Deletions:  file.Deletions,
-			Unresolved: unresolved[file.Path],
-			Viewed:     m.viewed[file.Path],
-		})
-	}
-
-	return out
-}
-
-func (m *model) widgetComments() []widgets.CommentItem {
-	out := make([]widgets.CommentItem, 0, len(m.comments))
-	for _, comment := range m.comments {
-		end := comment.Line
-		if len(comment.Lines) == 2 {
-			end = comment.Lines[1]
-		}
-		out = append(out, widgets.CommentItem{
-			ID:       comment.ID,
-			File:     comment.File,
-			Line:     comment.Line,
-			EndLine:  end,
-			Body:     comment.Body,
-			Resolved: comment.Resolved,
-		})
-	}
-
-	return out
-}
-
-func (m *model) focusName() string {
-	switch m.focus {
-	case focusFiles:
-		return "files"
-	case focusDiff:
-		return "diff"
-	case focusBottom:
-		return "bottom"
-	default:
-		return "diff"
-	}
-}
-
-func (m *model) bottomTitle() string {
-	switch m.mode {
-	case modeGoto:
-		return "Go to file"
-	case modeSearch:
-		return "Search"
-	case modeComment:
-		return "Comment"
-	case modeDescription:
-		return "Description"
-	case modeRequestChanges:
-		return "Request changes"
-	case modeConfirmApprove, modeConfirmRequest:
-		return "Confirm"
-	case modeHelp:
-		return "Help"
-	case modeHover:
-		return "Hover Info"
-	default:
-		return "Comments"
-	}
-}
-
-func (m *model) bottomHeight() int {
-	switch m.mode {
-	case modeComment:
-		return 11
-	case modeRequestChanges:
-		return 8
-	case modeDescription, modeHelp, modeHover:
-		return 9
-	default:
-		return 0
-	}
-}
-
-func (m *model) bottomBody() string {
-	switch m.mode {
-	case modeGoto:
-		return widgets.RenderFilePicker(m.width-4, m.gotoInput.Value(), m.widgetFiles(), m.gotoIndex)
-	case modeSearch:
-		return "/" + m.search.Value() + fmt.Sprintf("\n%d matches  Enter next  Esc close", len(m.matches))
-	case modeComment:
-		return "Comment target: " + m.commentTarget() + "\n" + m.composer.View() + "\n" + m.commentActionRow()
-	case modeDescription:
-		return m.description
-	case modeRequestChanges:
-		return m.request.View() + "\nctrl+s continue  esc cancel"
-	case modeConfirmApprove:
-		return "Approve pushes the current branch and marks this review approved.\n" +
-			"Press y to approve or n/Esc to cancel."
-	case modeConfirmRequest:
-		return "Mark this review as changes requested?\nPress y to request changes or n/Esc to cancel."
-	case modeHover:
-		return m.hoverInfo
-	case modeHelp:
-		return "j/k move lines, J/K move hunks, [/]/next/previous file, f file picker, " +
-			"/ search, n/N search results, v visual selection, c comment, r resolve, " +
-			"d show description, g generate description, a approve, x request changes, " +
-			"i hover info (LSP), Space context menu."
-	default:
-		target := m.commentTarget()
-		if target != ":" && target != "" {
-			body := "Selected: " + target + "\nPress c to add a comment"
-			if m.status != "" {
-				body += "\n" + m.status
-			}
-
-			return body
-		}
-	}
-
-	return ""
-}
-
-func (m *model) commentTarget() string {
-	file := m.currentFile()
-	if m.focus == focusFiles {
-		return file
-	}
-	if m.visualStart > 0 {
-		start, end := ordered(m.visualStart, m.visualEnd)
-
-		return fmt.Sprintf("%s:%d-%d", file, start, end)
-	}
-
-	return fmt.Sprintf("%s:%d", file, m.currentLine())
 }
 
 func ordered(a, b int) (int, int) {
