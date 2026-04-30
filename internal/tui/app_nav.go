@@ -35,6 +35,7 @@ func (m *model) replaceFile(file models.DiffFile) {
 	for i := range m.files {
 		if m.files[i].Path == file.Path {
 			m.files[i].Hunks = file.Hunks
+			m.files[i].ContentLines = file.ContentLines
 
 			return
 		}
@@ -42,9 +43,14 @@ func (m *model) replaceFile(file models.DiffFile) {
 	m.files = append(m.files, file)
 }
 
-func flatten(file models.DiffFile) []diffRow {
+func flatten(file models.DiffFile, expanded []expandedRange) []diffRow {
 	rows := make([]diffRow, 0, len(file.Hunks))
+	cursor := 1
 	for hunkIndex, hunk := range file.Hunks {
+		start, end := hunkBounds(hunk)
+		if start > 0 {
+			rows = appendExpandedGap(rows, file.ContentLines, cursor, start-1, expanded)
+		}
 		rows = append(rows, diffRow{
 			kind:        "hunk",
 			hunk:        hunkIndex,
@@ -64,19 +70,24 @@ func flatten(file models.DiffFile) []diffRow {
 				uncommitted: hunk.Uncommitted,
 			})
 		}
+		if end >= cursor {
+			cursor = end + 1
+		}
 	}
+	rows = appendExpandedGap(rows, file.ContentLines, cursor, len(file.ContentLines), expanded)
 
 	return rows
 }
 
-func toWidgetRows(rows []diffRow) []widgets.DiffItem {
+func toWidgetRows(rows []diffRow, selected int) []widgets.DiffItem {
 	out := make([]widgets.DiffItem, 0, len(rows))
-	for _, row := range rows {
+	for i, row := range rows {
 		out = append(out, widgets.DiffItem{
 			Kind:        row.kind,
 			Hunk:        row.hunk,
 			Line:        row.line,
 			Content:     row.content,
+			Selected:    i == selected,
 			Uncommitted: row.uncommitted,
 		})
 	}
@@ -86,7 +97,7 @@ func toWidgetRows(rows []diffRow) []widgets.DiffItem {
 
 func firstSelectable(rows []diffRow) int {
 	for i, row := range rows {
-		if row.line > 0 {
+		if rowSelectable(row) {
 			return i
 		}
 	}
@@ -257,9 +268,9 @@ func (m *model) moveLine(delta int) {
 		if next < 0 || next >= len(m.rows) {
 			break
 		}
-		if m.rows[next].line > 0 {
+		if rowSelectable(m.rows[next]) {
 			m.lineIndex = next
-			if m.visualStart > 0 {
+			if m.visualStart > 0 && m.rows[next].line > 0 {
 				m.visualEnd = m.rows[next].line
 			}
 
@@ -275,7 +286,7 @@ func (m *model) moveHunk(delta int) {
 	}
 	current := m.rows[m.lineIndex].hunk
 	for i, row := range m.rows {
-		if delta > 0 && row.hunk > current && row.line > 0 {
+		if delta > 0 && row.hunk > current && rowSelectable(row) {
 			m.lineIndex = i
 			m.ensureVisible()
 
@@ -284,7 +295,7 @@ func (m *model) moveHunk(delta int) {
 	}
 	if delta < 0 {
 		for i := len(m.rows) - 1; i >= 0; i-- {
-			if m.rows[i].hunk < current && m.rows[i].line > 0 {
+			if m.rows[i].hunk < current && rowSelectable(m.rows[i]) {
 				m.lineIndex = i
 				m.ensureVisible()
 

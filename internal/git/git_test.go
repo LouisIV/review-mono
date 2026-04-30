@@ -2,10 +2,12 @@ package git_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"review/internal/git"
@@ -115,6 +117,50 @@ func TestDiffFiltersUntrackedFile(t *testing.T) {
 
 	if raw == "" {
 		t.Fatal("raw diff is empty")
+	}
+}
+
+func TestDiffExposesContentLinesAndHunkStart(t *testing.T) {
+	t.Parallel()
+
+	repoPath := initTestRepo(t)
+	runGit(t, repoPath, "checkout", "-b", "feature")
+
+	lines := make([]string, 0, 30)
+	for i := 1; i <= 30; i++ {
+		lines = append(lines, fmt.Sprintf("line %02d", i))
+	}
+	writeFile(t, repoPath, "long.txt", strings.Join(lines, "\n")+"\n")
+	runGit(t, repoPath, "add", "long.txt")
+	runGit(t, repoPath, "commit", "-m", "add long file")
+
+	lines[14] = "changed line 15"
+	writeFile(t, repoPath, "long.txt", strings.Join(lines, "\n")+"\n")
+	runGit(t, repoPath, "add", "long.txt")
+	runGit(t, repoPath, "commit", "-m", "change long file")
+
+	repo, err := git.Open(repoPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	files, _, err := repo.Diff("main", "long.txt", "", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	file := findDiffFile(files, "long.txt")
+	if file == nil {
+		t.Fatal("long.txt not found")
+	}
+	if got, want := len(file.ContentLines), 30; got != want {
+		t.Fatalf("content lines = %d, want %d", got, want)
+	}
+	if got := file.ContentLines[14]; got != "changed line 15" {
+		t.Fatalf("content line 15 = %q, want changed line", got)
+	}
+	if len(file.Hunks) != 1 || file.Hunks[0].NewStart == 0 {
+		t.Fatalf("hunks = %#v, want parsed new start", file.Hunks)
 	}
 }
 

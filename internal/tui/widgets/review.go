@@ -29,6 +29,7 @@ type DiffItem struct {
 	Hunk        int
 	Line        int
 	Content     string
+	Selected    bool
 	Uncommitted bool
 }
 
@@ -37,6 +38,7 @@ type CommentItem struct {
 	File     string
 	Line     int
 	EndLine  int
+	Author   string
 	Body     string
 	Resolved bool
 }
@@ -118,7 +120,7 @@ func RenderReviewWorkspace(width, height int, data WorkspaceData) string {
 func renderRuntimeFiles(width, height int, data WorkspaceData) string {
 	rows := make([]string, 0, 2+len(data.Files))
 	rows = append(rows, titleStyle.Render("Files"), focusLabel(data.Focus == "files", data.Status))
-	for _, file := range data.Files {
+	for _, file := range visibleFileItems(data.Files, data.ActiveFile, height-2) {
 		prefix := "  "
 		if file.Path == data.ActiveFile {
 			prefix = "> "
@@ -145,6 +147,28 @@ func renderRuntimeFiles(width, height int, data WorkspaceData) string {
 	}
 
 	return fixedBox(width, height, rows)
+}
+
+func visibleFileItems(files []FileItem, activeFile string, limit int) []FileItem {
+	if limit <= 0 || len(files) <= limit {
+		return files
+	}
+
+	active := 0
+	for i, file := range files {
+		if file.Path == activeFile {
+			active = i
+
+			break
+		}
+	}
+
+	start := max(active-limit/2, 0)
+	if start+limit > len(files) {
+		start = len(files) - limit
+	}
+
+	return files[start : start+limit]
 }
 
 func renderRuntimeDiff(width, height int, data WorkspaceData) string {
@@ -203,13 +227,26 @@ func renderRuntimeDiffLine(
 	commentBadges map[int]string,
 ) string {
 	if row.Kind == "hunk" {
-		return hunkStyle.Render("      " + truncateMiddle(row.Content, width-6))
+		bg := lineBackground(row.Kind, row.Selected)
+		return padLineBackground(
+			styleWithLineBg(hunkStyle, bg).Render("      "+truncateMiddle(row.Content, width-6)),
+			width,
+			bg,
+		)
+	}
+	if row.Kind == "expand" {
+		bg := lineBackground(row.Kind, row.Selected)
+		return padLineBackground(
+			styleWithLineBg(mutedStyle, bg).Render("      ... "+truncateMiddle(row.Content, width-10)),
+			width,
+			bg,
+		)
 	}
 
-	bg := lineBackground(row.Kind, row.Line == data.SelectedLine)
+	bg := lineBackground(row.Kind, row.Selected || row.Line == data.SelectedLine)
 
 	marker := " "
-	if row.Line == data.SelectedLine {
+	if row.Selected || row.Line == data.SelectedLine {
 		marker = ">"
 	}
 	if data.VisualStart > 0 {
@@ -325,6 +362,9 @@ func renderCommentRows(data WorkspaceData) []string {
 		loc := fmt.Sprintf("%s:%d", comment.File, comment.Line)
 		if comment.EndLine > comment.Line {
 			loc = fmt.Sprintf("%s:%d-%d", comment.File, comment.Line, comment.EndLine)
+		}
+		if comment.Author != "" {
+			loc += "  " + mutedStyle.Render(comment.Author)
 		}
 		rows = append(rows, fmt.Sprintf("%s  %s  %s", comment.ID, state, loc))
 		rows = append(rows, mutedStyle.Render("  "+comment.Body))

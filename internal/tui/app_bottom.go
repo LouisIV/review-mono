@@ -67,6 +67,9 @@ func (m *model) bottomBody() string {
 			"d show description, g generate description, a approve, x request changes, " +
 			"i hover info (LSP), Space context menu."
 	default:
+		if m.hasVisibleCurrentFileComments() {
+			return ""
+		}
 		target := m.commentTarget()
 		if target != ":" && target != "" {
 			body := "Selected: " + target + "\nPress c to add a comment"
@@ -93,4 +96,15 @@ func (m *model) commentTarget() string {
 	}
 
 	return fmt.Sprintf("%s:%d", file, m.currentLine())
+}
+
+func (m *model) hasVisibleCurrentFileComments() bool {
+	file := m.currentFile()
+	for _, comment := range m.comments {
+		if comment.File == file {
+			return true
+		}
+	}
+
+	return false
 }

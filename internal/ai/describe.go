@@ -14,8 +14,16 @@ import (
 )
 
 const (
-	claudeCLI = "claude-cli"
-	codexCLI  = "codex-cli"
+	claudeCLI                    = "claude-cli"
+	codexCLI                     = "codex-cli"
+	maxDescriptionDiffBytes      = 60000
+	maxDescriptionGuidanceBytes  = 4000
+	maxGeneratedDescriptionBytes = 4000
+	maxFallbackFiles             = 20
+	maxHunksPerFallbackFile      = 3
+	maxFallbackPathBytes         = 160
+	maxFallbackHunkContextBytes  = 120
+	truncatedDescriptionMarker   = "\n\n[description truncated]\n"
 )
 
 func GenerateDescription(apiKey, provider, diff, prompt string) (string, error) {
@@ -24,30 +32,30 @@ func GenerateDescription(apiKey, provider, diff, prompt string) (string, error) 
 	switch strings.ToLower(strings.TrimSpace(provider)) {
 	case "", "auto":
 		if strings.TrimSpace(apiKey) != "" {
-			return generateWithAnthropicAPI(apiKey, userPrompt)
+			return generatedDescription(generateWithAnthropicAPI(apiKey, userPrompt))
 		}
 
 		if out, err := generateWithCLI(claudeCLI, userPrompt); err == nil {
-			return out, nil
+			return generatedDescription(out, nil)
 		}
 
 		if out, err := generateWithCLI(codexCLI, userPrompt); err == nil {
-			return out, nil
+			return generatedDescription(out, nil)
 		}
 
-		return fallbackDescription(diff), nil
+		return generatedDescription(fallbackDescription(diff), nil)
 	case "anthropic", "anthropic-api", "claude-api":
 		if strings.TrimSpace(apiKey) == "" {
 			return "", fmt.Errorf("anthropic api key is required for provider %q", provider)
 		}
 
-		return generateWithAnthropicAPI(apiKey, userPrompt)
+		return generatedDescription(generateWithAnthropicAPI(apiKey, userPrompt))
 	case "claude", claudeCLI:
-		return generateWithCLI(claudeCLI, userPrompt)
+		return generatedDescription(generateWithCLI(claudeCLI, userPrompt))
 	case "codex", codexCLI:
-		return generateWithCLI(codexCLI, userPrompt)
+		return generatedDescription(generateWithCLI(codexCLI, userPrompt))
 	case "fallback":
-		return fallbackDescription(diff), nil
+		return generatedDescription(fallbackDescription(diff), nil)
 	default:
 		return "", fmt.Errorf("unknown ai provider %q", provider)
 	}
@@ -57,10 +65,10 @@ func descriptionPrompt(diff, prompt string) string {
 	userPrompt := "Write a concise merge request description for this diff. " +
 		"Include a summary and test notes if evident."
 	if prompt != "" {
-		userPrompt += "\nAdditional guidance: " + prompt
+		userPrompt += "\nAdditional guidance: " + truncate(prompt, maxDescriptionGuidanceBytes)
 	}
 
-	return userPrompt + "\n\nDiff:\n" + truncate(diff, 120000)
+	return userPrompt + "\n\nDiff:\n" + truncate(diff, maxDescriptionDiffBytes)
 }
 
 func generateWithAnthropicAPI(apiKey, userPrompt string) (string, error) {
@@ -274,6 +282,7 @@ func fallbackDescription(diff string) string {
 	files := 0
 	adds := 0
 	dels := 0
+	changed := changedFileSummaries(diff)
 
 	for line := range strings.SplitSeq(diff, "\n") {
 		if strings.HasPrefix(line, "diff --git ") {
@@ -289,12 +298,104 @@ func fallbackDescription(diff string) string {
 		}
 	}
 
-	return fmt.Sprintf(
-		"## Summary\n\nUpdates %d file(s), with %d additions and %d deletions.\n\n## Testing\n\nNot specified.\n",
+	var summary strings.Builder
+	_, _ = fmt.Fprintf(
+		&summary,
+		"Updates %d file(s), with %d additions and %d deletions.",
 		files,
 		adds,
 		dels,
 	)
+	if len(changed) > 0 {
+		_, _ = fmt.Fprintf(&summary, "\n\nChanged files:\n")
+		for _, file := range changed {
+			_, _ = fmt.Fprintf(&summary, "- %s", file.Path)
+			if len(file.Hunks) > 0 {
+				_, _ = fmt.Fprintf(&summary, ": %s", strings.Join(file.Hunks, "; "))
+			}
+			_, _ = summary.WriteString("\n")
+		}
+		if files > len(changed) {
+			_, _ = fmt.Fprintf(&summary, "- ...and %d more file(s)\n", files-len(changed))
+		}
+	}
+
+	return fmt.Sprintf(
+		"## Summary\n\n%s\n\n## Testing\n\nNot specified.\n",
+		summary.String(),
+	)
+}
+
+type changedFileSummary struct {
+	Path  string
+	Hunks []string
+}
+
+func changedFileSummaries(diff string) []changedFileSummary {
+	out := []changedFileSummary{}
+	acceptingFile := false
+	for line := range strings.SplitSeq(diff, "\n") {
+		if strings.HasPrefix(line, "diff --git ") {
+			acceptingFile = len(out) < maxFallbackFiles
+			if len(out) >= maxFallbackFiles {
+				continue
+			}
+
+			parts := strings.Fields(line)
+			path := ""
+			if len(parts) >= 4 {
+				path = truncateInline(strings.TrimPrefix(parts[3], "b/"), maxFallbackPathBytes)
+			}
+			out = append(out, changedFileSummary{Path: path})
+
+			continue
+		}
+
+		if !acceptingFile || len(out) == 0 || !strings.HasPrefix(line, "@@") {
+			continue
+		}
+
+		file := &out[len(out)-1]
+		if len(file.Hunks) >= maxHunksPerFallbackFile {
+			continue
+		}
+
+		if hunk := hunkContext(line); hunk != "" {
+			file.Hunks = append(file.Hunks, hunk)
+		}
+	}
+
+	return out
+}
+
+func hunkContext(line string) string {
+	end := strings.LastIndex(line, "@@")
+	if end <= 1 || end+2 >= len(line) {
+		return ""
+	}
+
+	return truncateInline(strings.TrimSpace(line[end+2:]), maxFallbackHunkContextBytes)
+}
+
+func generatedDescription(body string, err error) (string, error) {
+	if err != nil {
+		return "", err
+	}
+
+	return truncateDescription(body), nil
+}
+
+func truncateDescription(body string) string {
+	if len(body) <= maxGeneratedDescriptionBytes {
+		return body
+	}
+
+	limit := maxGeneratedDescriptionBytes - len(truncatedDescriptionMarker)
+	if limit <= 0 {
+		return truncatedDescriptionMarker
+	}
+
+	return strings.TrimRight(body[:limit], "\n") + truncatedDescriptionMarker
 }
 
 func truncate(s string, limit int) string {
@@ -303,4 +404,15 @@ func truncate(s string, limit int) string {
 	}
 
 	return s[:limit] + "\n\n[diff truncated]\n"
+}
+
+func truncateInline(s string, limit int) string {
+	if len(s) <= limit {
+		return s
+	}
+	if limit <= 3 {
+		return s[:limit]
+	}
+
+	return s[:limit-3] + "..."
 }

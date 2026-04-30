@@ -147,6 +147,7 @@ func (r Repo) Diff(base, file, commit string, skipHunks bool) ([]models.DiffFile
 		if commit == "" {
 			addParsedHunks(files, parseUnifiedDiff(worktreeRaw+untrackedRaw, true))
 		}
+		addContentLines(r.Path, files, commit)
 	}
 
 	return files, raw, nil
@@ -400,6 +401,39 @@ func addParsedHunks(files []models.DiffFile, parsed map[string]models.DiffFile) 
 	}
 }
 
+func addContentLines(repoPath string, files []models.DiffFile, commit string) {
+	for i := range files {
+		content, err := fileContent(repoPath, files[i].Path, commit)
+		if err != nil {
+			continue
+		}
+		files[i].ContentLines = splitContentLines(content)
+	}
+}
+
+func fileContent(repoPath, path, commit string) (string, error) {
+	if commit != "" {
+		return run(repoPath, "show", commit+":"+path)
+	}
+
+	//nolint:gosec // Paths come from git diff output and are resolved inside the selected repository.
+	content, err := os.ReadFile(filepath.Join(repoPath, path))
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
+}
+
+func splitContentLines(content string) []string {
+	content = strings.TrimSuffix(content, "\n")
+	if content == "" {
+		return nil
+	}
+
+	return strings.Split(content, "\n")
+}
+
 var hunkRe = regexp.MustCompile(`@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@`)
 
 func parseUnifiedDiff(raw string, uncommitted bool) map[string]models.DiffFile {
@@ -432,11 +466,17 @@ func parseUnifiedDiff(raw string, uncommitted bool) map[string]models.DiffFile {
 
 		if strings.HasPrefix(line, "@@ ") {
 			m := hunkRe.FindStringSubmatch(line)
+			nextStart := 0
 			if len(m) == 3 {
 				newLine, _ = strconv.Atoi(m[2])
+				nextStart = newLine
 			}
 
-			current.Hunks = append(current.Hunks, models.DiffHunk{Header: line, Uncommitted: uncommitted})
+			current.Hunks = append(current.Hunks, models.DiffHunk{
+				Header:      line,
+				NewStart:    nextStart,
+				Uncommitted: uncommitted,
+			})
 			hunk = &current.Hunks[len(current.Hunks)-1]
 			result[current.Path] = *current
 
