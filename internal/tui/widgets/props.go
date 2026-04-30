@@ -16,7 +16,7 @@ type Props struct {
 }
 
 func Names() []string {
-	return []string{"workspace", "file-list", "diff", "context-menu", "goto-file", "search", "comments"}
+	return []string{"workspace", "workspace-list", "file-list", "diff", "context-menu", "goto-file", "search", "comments"}
 }
 
 func DefaultProps() Props {

@@ -30,6 +30,8 @@ func NewModelWithMode(name string, props Props, interactive bool) Model {
 	switch name {
 	case "workspace":
 		widget = NewWorkspace(props)
+	case "workspace-list":
+		widget = NewWorkspaceList(props)
 	case "file-list":
 		widget = NewFileList(props)
 	case "diff":
@@ -107,6 +109,11 @@ func RenderTree(name string) string {
 			"  FileListWidget [tea.Model]",
 			"  DiffWidget [tea.Model + bubbles/viewport]",
 			"  ContextMenuWidget [tea.Model]",
+		},
+		"workspace-list": {
+			"WorkspaceListWidget [tea.Model]",
+			"  Header [lipgloss.Style]",
+			"  RepoRow * n [lipgloss.Style]",
 		},
 		"file-list":    {"FileListWidget [tea.Model]", "  FileRow * n [lipgloss.Style]"},
 		"diff":         {"DiffWidget [tea.Model]", "  viewport.Model", "  DiffLine * n [lipgloss.Style]"},

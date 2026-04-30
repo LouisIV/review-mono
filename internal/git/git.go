@@ -515,6 +515,33 @@ func parseUnifiedDiff(raw string, uncommitted bool) map[string]models.DiffFile {
 	return result
 }
 
+// DiscoverNested finds git repositories in immediate subdirectories of dir.
+// Hidden directories (names starting with ".") are skipped.
+func DiscoverNested(dir string) ([]Repo, error) {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	entries, err := os.ReadDir(abs)
+	if err != nil {
+		return nil, err
+	}
+
+	var repos []Repo
+	for _, entry := range entries {
+		if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+		subPath := filepath.Join(abs, entry.Name())
+		if _, statErr := os.Stat(filepath.Join(subPath, ".git")); statErr == nil {
+			repos = append(repos, Repo{Path: subPath})
+		}
+	}
+
+	return repos, nil
+}
+
 func parseRemote(remote string) (string, string, string) {
 	remote = strings.TrimSuffix(remote, ".git")
 	if after, ok := strings.CutPrefix(remote, "git@"); ok {

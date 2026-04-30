@@ -376,6 +376,63 @@ func renderCommentRows(data WorkspaceData) []string {
 	return rows
 }
 
+// WorkspaceRepoItem holds display data for one repo in the workspace list.
+type WorkspaceRepoItem struct {
+	Name        string
+	Branch      string
+	Status      string
+	FileCount   int
+	CommitCount int
+	Loading     bool
+	Err         error
+}
+
+// RenderWorkspaceList renders the multi-repo workspace selection screen.
+func RenderWorkspaceList(width, height int, repos []WorkspaceRepoItem, selected int, status string) string {
+	if width <= 0 {
+		width = 96
+	}
+	if height <= 0 {
+		height = 28
+	}
+
+	header := titleStyle.Render("Workspace") + mutedStyle.Render("  "+status)
+	headerBox := fixedBox(width, 1, []string{header})
+
+	bodyHeight := max(height-5, 4)
+	rows := []string{titleStyle.Render("Repositories")}
+	for i, repo := range repos {
+		prefix := "  "
+		if i == selected {
+			prefix = "> "
+		}
+		var detail string
+		switch {
+		case repo.Loading:
+			detail = mutedStyle.Render("loading...")
+		case repo.Err != nil:
+			detail = mutedStyle.Render("error: " + repo.Err.Error())
+		default:
+			st := ""
+			if repo.Status != "" {
+				st = repo.Status + "  "
+			}
+			detail = mutedStyle.Render(fmt.Sprintf("%s%s  %d files  %d commits", st, repo.Branch, repo.FileCount, repo.CommitCount))
+		}
+		nameWidth := 24
+		row := fmt.Sprintf("%s%-*s  %s", prefix, nameWidth, truncateMiddle(repo.Name, nameWidth), detail)
+		if i == selected {
+			row = activeStyle.Render(row)
+		}
+		rows = append(rows, row)
+	}
+
+	body := fixedBox(width, bodyHeight, rows)
+	help := mutedStyle.Render("j/k navigate   Enter open review   R reload   q quit")
+
+	return lipgloss.JoinVertical(lipgloss.Left, headerBox, body, help) + "\n"
+}
+
 func RenderFilePicker(width int, query string, files []FileItem, cursor int) string {
 	rows := []string{titleStyle.Render("Go to file"), "/" + query}
 	matches := FilterFileItems(query, files)
