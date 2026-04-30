@@ -347,7 +347,7 @@ Liveness check.
 **Response:**
 
 ```json
-{ "ok": true, "version": "0.1.0” }
+{ "ok": true, "version": "0.1.0", "build_id": "9f1c...", "pid": 12345 }
 ```
 
 ### `GET /status`

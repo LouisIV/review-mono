@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"review/internal/buildinfo"
 	"review/internal/client"
 	"review/internal/config"
 	"review/internal/daemon"
@@ -108,7 +109,8 @@ func daemonCmd(args []string, g globals, cfg config.Config) error {
 	case "run":
 		return daemon.New(cfg).ListenAndServe(g.port)
 	case "start":
-		if client.New(g.port).Health() == nil {
+		info, healthErr := client.New(g.port).HealthInfo()
+		if healthErr == nil && daemonCompatible(info, buildinfo.Current()) {
 			if g.json {
 				printJSON(map[string]any{"running": true, "port": g.port})
 			} else {
@@ -118,10 +120,10 @@ func daemonCmd(args []string, g globals, cfg config.Config) error {
 			return nil
 		}
 
-		pid, err := startDaemon(g.port)
-		if err != nil {
+		if err := ensureDaemon(g.port); err != nil {
 			return err
 		}
+		pid, _ := readPID()
 
 		if g.json {
 			printJSON(map[string]any{"running": true, "port": g.port, "pid": pid})
