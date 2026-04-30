@@ -29,6 +29,7 @@ type DiffItem struct {
 	Hunk        int
 	Line        int
 	Content     string
+	Selected    bool
 	Uncommitted bool
 }
 
@@ -226,13 +227,26 @@ func renderRuntimeDiffLine(
 	commentBadges map[int]string,
 ) string {
 	if row.Kind == "hunk" {
-		return hunkStyle.Render("      " + truncateMiddle(row.Content, width-6))
+		bg := lineBackground(row.Kind, row.Selected)
+		return padLineBackground(
+			styleWithLineBg(hunkStyle, bg).Render("      "+truncateMiddle(row.Content, width-6)),
+			width,
+			bg,
+		)
+	}
+	if row.Kind == "expand" {
+		bg := lineBackground(row.Kind, row.Selected)
+		return padLineBackground(
+			styleWithLineBg(mutedStyle, bg).Render("      ... "+truncateMiddle(row.Content, width-10)),
+			width,
+			bg,
+		)
 	}
 
-	bg := lineBackground(row.Kind, row.Line == data.SelectedLine)
+	bg := lineBackground(row.Kind, row.Selected || row.Line == data.SelectedLine)
 
 	marker := " "
-	if row.Line == data.SelectedLine {
+	if row.Selected || row.Line == data.SelectedLine {
 		marker = ">"
 	}
 	if data.VisualStart > 0 {

@@ -52,15 +52,17 @@ type DiffLine struct {
 type DiffHunk struct {
 	Header      string     `json:"header"`
 	Lines       []DiffLine `json:"lines"`
+	NewStart    int        `json:"new_start,omitempty"`
 	Uncommitted bool       `json:"uncommitted,omitempty"`
 }
 
 type DiffFile struct {
-	Path      string     `json:"path"`
-	Additions int        `json:"additions"`
-	Deletions int        `json:"deletions"`
-	Hunks     []DiffHunk `json:"hunks,omitempty"`
-	Comments  []Comment  `json:"comments,omitempty"`
+	Path         string     `json:"path"`
+	Additions    int        `json:"additions"`
+	Deletions    int        `json:"deletions"`
+	ContentLines []string   `json:"content_lines,omitempty"`
+	Hunks        []DiffHunk `json:"hunks,omitempty"`
+	Comments     []Comment  `json:"comments,omitempty"`
 }
 
 type Event struct {

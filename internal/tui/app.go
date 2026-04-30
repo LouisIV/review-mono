@@ -69,7 +69,15 @@ type diffRow struct {
 	hunk        int
 	line        int
 	content     string
+	expandStart int
+	expandEnd   int
+	expandEdge  string
 	uncommitted bool
+}
+
+type expandedRange struct {
+	start int
+	end   int
 }
 
 type model struct {
@@ -99,6 +107,7 @@ type model struct {
 	top       int
 	xOffset   int
 	viewed    map[string]bool
+	expanded  map[string][]expandedRange
 
 	unresolvedOnly bool
 	visualStart    int
@@ -143,6 +152,7 @@ func newModel(opts Options) *model {
 		status:    "loading review",
 		focus:     focusDiff,
 		viewed:    map[string]bool{},
+		expanded:  map[string][]expandedRange{},
 		gotoInput: gotoInput,
 		search:    search,
 		composer:  composer,
@@ -222,9 +232,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, loadFileAt(m.opts, m.files[m.fileIndex].Path, msg.refresh)
 	case fileLoadedMsg:
 		m.replaceFile(msg.file)
-		m.rows = flatten(msg.file)
-		m.diffItems = toWidgetRows(m.rows)
+		m.rows = flatten(msg.file, m.expanded[msg.file.Path])
 		m.restoreRefreshPosition(msg.refresh)
+		m.diffItems = toWidgetRows(m.rows, m.lineIndex)
 		m.status = "loaded " + msg.file.Path
 		m.updateMatches()
 
@@ -235,9 +245,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.applyReviewData(msg.session, msg.commits, msg.files, msg.comments, msg.refresh)
 		if msg.file != nil {
 			m.replaceFile(*msg.file)
-			m.rows = flatten(*msg.file)
-			m.diffItems = toWidgetRows(m.rows)
+			m.rows = flatten(*msg.file, m.expanded[msg.file.Path])
 			m.restoreRefreshPosition(msg.refresh)
+			m.diffItems = toWidgetRows(m.rows, m.lineIndex)
 			m.status = "loaded " + msg.file.Path
 			m.updateMatches()
 		}
@@ -320,7 +330,7 @@ func (m *model) View() string {
 		Status:       m.session.Status,
 		CommitCount:  len(m.commits),
 		Files:        m.widgetFiles(),
-		Rows:         m.diffItems,
+		Rows:         toWidgetRows(m.rows, m.lineIndex),
 		Comments:     m.widgetComments(),
 		ActiveFile:   m.currentFile(),
 		SelectedLine: m.currentLine(),

@@ -35,7 +35,7 @@ func newBenchmarkModel() *model {
 		comments:  comments,
 		fileIndex: 0,
 		rows:      rows,
-		diffItems: toWidgetRows(rows),
+		diffItems: toWidgetRows(rows, 120),
 		lineIndex: 120,
 		top:       105,
 		viewed:    map[string]bool{"internal/tui/widgets/review.go": true},
@@ -115,7 +115,7 @@ func BenchmarkToWidgetRowsLargeDiff(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for b.Loop() {
-		if len(toWidgetRows(rows)) == 0 {
+		if len(toWidgetRows(rows, 0)) == 0 {
 			b.Fatal("empty widget rows")
 		}
 	}

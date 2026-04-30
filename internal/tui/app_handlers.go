@@ -82,6 +82,7 @@ func (m *model) handleReviewKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.focus == focusFiles {
 			return m.selectFile(m.fileIndex)
 		}
+		m.expandCurrentSlot()
 	case "J":
 		m.moveHunk(1)
 	case "K":
