@@ -29,6 +29,13 @@ tasks:
     cmds:
       - GOCACHE="${GOCACHE:-/tmp/review-go-cache}" GOLANGCI_LINT_CACHE="${GOLANGCI_LINT_CACHE:-/tmp/review-golangci-cache}" "{{.BUILD_DIR}}/golangci-lint" run ./...
 
+  hooks-install:
+    desc: Configure git to use the repo's tracked hooks
+    cmds:
+      - chmod +x .githooks/pre-push
+      - git config core.hooksPath .githooks
+      - echo "Installed git hooks from .githooks"
+
   lint-install:
     desc: Install the pinned golangci-lint binary into ./bin
     cmds:

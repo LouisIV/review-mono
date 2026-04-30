@@ -8,6 +8,7 @@
 git clone https://github.com/louisiv/review-mono
 cd review-mono
 go mod download
+task hooks-install
 ```
 
 ## Development workflow
@@ -18,6 +19,7 @@ task run -- open    # run without installing (pass args after --)
 task daemon         # run daemon in foreground (useful for dev)
 task test           # run test suite
 task lint           # run golangci-lint (installs pinned version automatically)
+task hooks-install  # install the pre-push hook
 ```
 
 ## Project layout
@@ -55,6 +57,12 @@ These are enforced by CI (golangci-lint):
 - Formatting: `gofmt` + `goimports`
 
 Run `task lint` before pushing. CI will fail on lint errors.
+
+The tracked pre-push hook runs `task test` and `task lint` before every push. Enable it once with:
+
+```bash
+task hooks-install
+```
 
 ## Tests
 

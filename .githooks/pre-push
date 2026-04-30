@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+if ! command -v task >/dev/null 2>&1; then
+	echo "pre-push: task is required to run checks" >&2
+	echo "pre-push: install it from https://taskfile.dev or unset core.hooksPath" >&2
+	exit 1
+fi
+
+echo "pre-push: running tests"
+task test
+
+echo "pre-push: running lints"
+task lint
