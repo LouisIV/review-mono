@@ -39,9 +39,27 @@ func tuiCmd(args []string, g globals, cfg config.Config) error {
 		g.repo = pos[0]
 	}
 
-	repo, err := git.Open(g.repo)
-	if err != nil {
-		return err
+	// Try to open as a single git repo first.
+	repo, repoErr := git.Open(g.repo)
+	if repoErr != nil {
+		// Not a git repo — check if the path contains nested repos (workspace mode).
+		nested, err := git.DiscoverNested(g.repo)
+		if err != nil || len(nested) == 0 {
+			return repoErr
+		}
+		if !baseFlagSet {
+			base = cfg.DefaultBaseBranch
+		}
+		if err := ensureDaemon(g.port); err != nil {
+			return err
+		}
+		c := client.New(g.port)
+		return tui.RunWorkspace(tui.WorkspaceOptions{
+			Repos:  nested,
+			Client: c,
+			Config: cfg,
+			Base:   base,
+		})
 	}
 
 	if !baseFlagSet {
