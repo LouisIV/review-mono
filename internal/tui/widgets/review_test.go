@@ -64,3 +64,28 @@ func TestRenderRuntimeDiffUsesUncommittedIndicator(t *testing.T) {
 		t.Fatalf("rendered diff did not include uncommitted indicator:\n%s", out)
 	}
 }
+
+func TestRenderRuntimeFilesScrollsToActiveFile(t *testing.T) {
+	t.Parallel()
+
+	files := make([]widgets.FileItem, 0, 24)
+	for i := 1; i <= 24; i++ {
+		files = append(files, widgets.FileItem{Path: fmt.Sprintf("file-%02d.go", i)})
+	}
+
+	out := widgets.RenderReviewWorkspace(100, 28, widgets.WorkspaceData{
+		Branch:     "feature",
+		Base:       "main",
+		Status:     "in_review",
+		Files:      files,
+		ActiveFile: "file-23.go",
+		Focus:      "files",
+	})
+
+	if !strings.Contains(out, "file-23.go") {
+		t.Fatalf("rendered files did not include active file:\n%s", out)
+	}
+	if strings.Contains(out, "file-01.go") {
+		t.Fatalf("rendered files did not scroll past the first page:\n%s", out)
+	}
+}

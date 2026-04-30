@@ -118,7 +118,7 @@ func RenderReviewWorkspace(width, height int, data WorkspaceData) string {
 func renderRuntimeFiles(width, height int, data WorkspaceData) string {
 	rows := make([]string, 0, 2+len(data.Files))
 	rows = append(rows, titleStyle.Render("Files"), focusLabel(data.Focus == "files", data.Status))
-	for _, file := range data.Files {
+	for _, file := range visibleFileItems(data.Files, data.ActiveFile, height-2) {
 		prefix := "  "
 		if file.Path == data.ActiveFile {
 			prefix = "> "
@@ -145,6 +145,28 @@ func renderRuntimeFiles(width, height int, data WorkspaceData) string {
 	}
 
 	return fixedBox(width, height, rows)
+}
+
+func visibleFileItems(files []FileItem, activeFile string, limit int) []FileItem {
+	if limit <= 0 || len(files) <= limit {
+		return files
+	}
+
+	active := 0
+	for i, file := range files {
+		if file.Path == activeFile {
+			active = i
+
+			break
+		}
+	}
+
+	start := max(active-limit/2, 0)
+	if start+limit > len(files) {
+		start = len(files) - limit
+	}
+
+	return files[start : start+limit]
 }
 
 func renderRuntimeDiff(width, height int, data WorkspaceData) string {
