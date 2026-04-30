@@ -76,6 +76,7 @@ func (w *Watcher) watchDir(dir string) error {
 	}
 
 	events := notify.Create | notify.Remove | notify.Write | notify.Rename
+
 	return notify.Watch(filepath.Join(dir, "..."), w.notify, events)
 }
 

@@ -89,7 +89,6 @@ type model struct {
 
 	// Watcher handles
 	program     *tea.Program
-	watchCtx    context.Context
 	watchCancel context.CancelFunc
 	watchWg     sync.WaitGroup
 
@@ -500,15 +499,13 @@ func (m *model) startWatcher() {
 		return
 	}
 
-	m.watchCtx, m.watchCancel = context.WithCancel(context.Background())
+	watchCtx, watchCancel := context.WithCancel(context.Background())
+	m.watchCancel = watchCancel
 
-	m.watchWg.Add(1)
-	go func() {
-		defer m.watchWg.Done()
-
-		err := m.opts.Client.Watch(m.watchCtx, m.opts.RepoPath, func(event models.Event) bool {
+	m.watchWg.Go(func() {
+		err := m.opts.Client.Watch(watchCtx, m.opts.RepoPath, func(event models.Event) bool {
 			select {
-			case <-m.watchCtx.Done():
+			case <-watchCtx.Done():
 				return false
 			default:
 				m.program.Send(watcherEventMsg{event: event})
@@ -517,7 +514,7 @@ func (m *model) startWatcher() {
 			}
 		})
 		_ = err
-	}()
+	})
 }
 
 // stopWatcher stops the watcher goroutine.
