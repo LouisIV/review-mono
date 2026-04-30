@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777522814636,
+  "lastUpdate": 1777523221441,
   "repoUrl": "https://github.com/LouisIV/review-mono",
   "entries": {
     "TUI Benchmarks": [
@@ -2952,6 +2952,990 @@ window.BENCHMARK_DATA = {
             "value": 20,
             "unit": "allocs/op",
             "extra": "10000 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "louis@lombardo.work",
+            "name": "Louis Lombardo IV",
+            "username": "LouisIV"
+          },
+          "committer": {
+            "email": "louis@lombardo.work",
+            "name": "Louis Lombardo IV",
+            "username": "LouisIV"
+          },
+          "distinct": true,
+          "id": "dee5b7d1ea0ee29b2fcbf0aebf04e54207c6a401",
+          "message": "Add pre-push checks hook",
+          "timestamp": "2026-04-29T21:25:43-07:00",
+          "tree_id": "d5ced33a823c580f4140f21b684b20cc73bff775",
+          "url": "https://github.com/LouisIV/review-mono/commit/dee5b7d1ea0ee29b2fcbf0aebf04e54207c6a401"
+        },
+        "date": 1777523220951,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui)",
+            "value": 8090488,
+            "unit": "ns/op\t  805883 B/op\t   14587 allocs/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - ns/op",
+            "value": 8090488,
+            "unit": "ns/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - B/op",
+            "value": 805883,
+            "unit": "B/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - allocs/op",
+            "value": 14587,
+            "unit": "allocs/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui)",
+            "value": 8112248,
+            "unit": "ns/op\t  805371 B/op\t   14564 allocs/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - ns/op",
+            "value": 8112248,
+            "unit": "ns/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - B/op",
+            "value": 805371,
+            "unit": "B/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - allocs/op",
+            "value": 14564,
+            "unit": "allocs/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui)",
+            "value": 8098685,
+            "unit": "ns/op\t  801034 B/op\t   14563 allocs/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - ns/op",
+            "value": 8098685,
+            "unit": "ns/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - B/op",
+            "value": 801034,
+            "unit": "B/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - allocs/op",
+            "value": 14563,
+            "unit": "allocs/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui)",
+            "value": 8153472,
+            "unit": "ns/op\t  803672 B/op\t   14564 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - ns/op",
+            "value": 8153472,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - B/op",
+            "value": 803672,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - allocs/op",
+            "value": 14564,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui)",
+            "value": 8361153,
+            "unit": "ns/op\t  802702 B/op\t   14564 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - ns/op",
+            "value": 8361153,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - B/op",
+            "value": 802702,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - allocs/op",
+            "value": 14564,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui)",
+            "value": 8210558,
+            "unit": "ns/op\t  803892 B/op\t   14564 allocs/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - ns/op",
+            "value": 8210558,
+            "unit": "ns/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - B/op",
+            "value": 803892,
+            "unit": "B/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - allocs/op",
+            "value": 14564,
+            "unit": "allocs/op",
+            "extra": "145 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui)",
+            "value": 8184064,
+            "unit": "ns/op\t  800292 B/op\t   14563 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - ns/op",
+            "value": 8184064,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - B/op",
+            "value": 800292,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - allocs/op",
+            "value": 14563,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui)",
+            "value": 8151054,
+            "unit": "ns/op\t  796917 B/op\t   14563 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - ns/op",
+            "value": 8151054,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - B/op",
+            "value": 796917,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - allocs/op",
+            "value": 14563,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui)",
+            "value": 8394179,
+            "unit": "ns/op\t  802707 B/op\t   14564 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - ns/op",
+            "value": 8394179,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - B/op",
+            "value": 802707,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - allocs/op",
+            "value": 14564,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui)",
+            "value": 9139107,
+            "unit": "ns/op\t  803915 B/op\t   14564 allocs/op",
+            "extra": "124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - ns/op",
+            "value": 9139107,
+            "unit": "ns/op",
+            "extra": "124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - B/op",
+            "value": 803915,
+            "unit": "B/op",
+            "extra": "124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkModelViewLargeReview (review/internal/tui) - allocs/op",
+            "value": 14564,
+            "unit": "allocs/op",
+            "extra": "124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui)",
+            "value": 329896,
+            "unit": "ns/op\t  581639 B/op\t       1 allocs/op",
+            "extra": "3596 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - ns/op",
+            "value": 329896,
+            "unit": "ns/op",
+            "extra": "3596 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - B/op",
+            "value": 581639,
+            "unit": "B/op",
+            "extra": "3596 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3596 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui)",
+            "value": 323248,
+            "unit": "ns/op\t  581641 B/op\t       1 allocs/op",
+            "extra": "3600 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - ns/op",
+            "value": 323248,
+            "unit": "ns/op",
+            "extra": "3600 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - B/op",
+            "value": 581641,
+            "unit": "B/op",
+            "extra": "3600 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3600 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui)",
+            "value": 327943,
+            "unit": "ns/op\t  581640 B/op\t       1 allocs/op",
+            "extra": "3469 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - ns/op",
+            "value": 327943,
+            "unit": "ns/op",
+            "extra": "3469 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - B/op",
+            "value": 581640,
+            "unit": "B/op",
+            "extra": "3469 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3469 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui)",
+            "value": 326328,
+            "unit": "ns/op\t  581640 B/op\t       1 allocs/op",
+            "extra": "3444 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - ns/op",
+            "value": 326328,
+            "unit": "ns/op",
+            "extra": "3444 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - B/op",
+            "value": 581640,
+            "unit": "B/op",
+            "extra": "3444 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3444 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui)",
+            "value": 329990,
+            "unit": "ns/op\t  581640 B/op\t       1 allocs/op",
+            "extra": "3396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - ns/op",
+            "value": 329990,
+            "unit": "ns/op",
+            "extra": "3396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - B/op",
+            "value": 581640,
+            "unit": "B/op",
+            "extra": "3396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui)",
+            "value": 337439,
+            "unit": "ns/op\t  581639 B/op\t       1 allocs/op",
+            "extra": "3517 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - ns/op",
+            "value": 337439,
+            "unit": "ns/op",
+            "extra": "3517 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - B/op",
+            "value": 581639,
+            "unit": "B/op",
+            "extra": "3517 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3517 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui)",
+            "value": 323627,
+            "unit": "ns/op\t  581640 B/op\t       1 allocs/op",
+            "extra": "3703 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - ns/op",
+            "value": 323627,
+            "unit": "ns/op",
+            "extra": "3703 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - B/op",
+            "value": 581640,
+            "unit": "B/op",
+            "extra": "3703 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3703 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui)",
+            "value": 328095,
+            "unit": "ns/op\t  581640 B/op\t       1 allocs/op",
+            "extra": "3050 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - ns/op",
+            "value": 328095,
+            "unit": "ns/op",
+            "extra": "3050 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - B/op",
+            "value": 581640,
+            "unit": "B/op",
+            "extra": "3050 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3050 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui)",
+            "value": 363596,
+            "unit": "ns/op\t  581637 B/op\t       1 allocs/op",
+            "extra": "3494 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - ns/op",
+            "value": 363596,
+            "unit": "ns/op",
+            "extra": "3494 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - B/op",
+            "value": 581637,
+            "unit": "B/op",
+            "extra": "3494 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "3494 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui)",
+            "value": 350141,
+            "unit": "ns/op\t  581636 B/op\t       1 allocs/op",
+            "extra": "2942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - ns/op",
+            "value": 350141,
+            "unit": "ns/op",
+            "extra": "2942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - B/op",
+            "value": 581636,
+            "unit": "B/op",
+            "extra": "2942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkToWidgetRowsLargeDiff (review/internal/tui) - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "2942 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets)",
+            "value": 8143988,
+            "unit": "ns/op\t  807677 B/op\t   17626 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - ns/op",
+            "value": 8143988,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - B/op",
+            "value": 807677,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - allocs/op",
+            "value": 17626,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets)",
+            "value": 8124257,
+            "unit": "ns/op\t  807676 B/op\t   17604 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - ns/op",
+            "value": 8124257,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - B/op",
+            "value": 807676,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - allocs/op",
+            "value": 17604,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets)",
+            "value": 8151822,
+            "unit": "ns/op\t  807664 B/op\t   17603 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - ns/op",
+            "value": 8151822,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - B/op",
+            "value": 807664,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - allocs/op",
+            "value": 17603,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets)",
+            "value": 8132978,
+            "unit": "ns/op\t  807186 B/op\t   17603 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - ns/op",
+            "value": 8132978,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - B/op",
+            "value": 807186,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - allocs/op",
+            "value": 17603,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets)",
+            "value": 8148180,
+            "unit": "ns/op\t  807653 B/op\t   17603 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - ns/op",
+            "value": 8148180,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - B/op",
+            "value": 807653,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - allocs/op",
+            "value": 17603,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets)",
+            "value": 8137567,
+            "unit": "ns/op\t  807029 B/op\t   17603 allocs/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - ns/op",
+            "value": 8137567,
+            "unit": "ns/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - B/op",
+            "value": 807029,
+            "unit": "B/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - allocs/op",
+            "value": 17603,
+            "unit": "allocs/op",
+            "extra": "147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets)",
+            "value": 8274450,
+            "unit": "ns/op\t  805440 B/op\t   17603 allocs/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - ns/op",
+            "value": 8274450,
+            "unit": "ns/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - B/op",
+            "value": 805440,
+            "unit": "B/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - allocs/op",
+            "value": 17603,
+            "unit": "allocs/op",
+            "extra": "142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets)",
+            "value": 8146305,
+            "unit": "ns/op\t  806720 B/op\t   17603 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - ns/op",
+            "value": 8146305,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - B/op",
+            "value": 806720,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - allocs/op",
+            "value": 17603,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets)",
+            "value": 8143282,
+            "unit": "ns/op\t  807190 B/op\t   17603 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - ns/op",
+            "value": 8143282,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - B/op",
+            "value": 807190,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - allocs/op",
+            "value": 17603,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets)",
+            "value": 8135470,
+            "unit": "ns/op\t  808150 B/op\t   17603 allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - ns/op",
+            "value": 8135470,
+            "unit": "ns/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - B/op",
+            "value": 808150,
+            "unit": "B/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkRenderReviewWorkspaceLargeDiff (review/internal/tui/widgets) - allocs/op",
+            "value": 17603,
+            "unit": "allocs/op",
+            "extra": "146 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets)",
+            "value": 128908,
+            "unit": "ns/op\t  108760 B/op\t      20 allocs/op",
+            "extra": "8943 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - ns/op",
+            "value": 128908,
+            "unit": "ns/op",
+            "extra": "8943 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - B/op",
+            "value": 108760,
+            "unit": "B/op",
+            "extra": "8943 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "8943 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets)",
+            "value": 128612,
+            "unit": "ns/op\t  108760 B/op\t      20 allocs/op",
+            "extra": "8142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - ns/op",
+            "value": 128612,
+            "unit": "ns/op",
+            "extra": "8142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - B/op",
+            "value": 108760,
+            "unit": "B/op",
+            "extra": "8142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "8142 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets)",
+            "value": 128747,
+            "unit": "ns/op\t  108760 B/op\t      20 allocs/op",
+            "extra": "9338 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - ns/op",
+            "value": 128747,
+            "unit": "ns/op",
+            "extra": "9338 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - B/op",
+            "value": 108760,
+            "unit": "B/op",
+            "extra": "9338 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "9338 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets)",
+            "value": 128096,
+            "unit": "ns/op\t  108760 B/op\t      20 allocs/op",
+            "extra": "9298 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - ns/op",
+            "value": 128096,
+            "unit": "ns/op",
+            "extra": "9298 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - B/op",
+            "value": 108760,
+            "unit": "B/op",
+            "extra": "9298 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "9298 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets)",
+            "value": 127306,
+            "unit": "ns/op\t  108760 B/op\t      20 allocs/op",
+            "extra": "9339 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - ns/op",
+            "value": 127306,
+            "unit": "ns/op",
+            "extra": "9339 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - B/op",
+            "value": 108760,
+            "unit": "B/op",
+            "extra": "9339 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "9339 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets)",
+            "value": 128324,
+            "unit": "ns/op\t  108760 B/op\t      20 allocs/op",
+            "extra": "9512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - ns/op",
+            "value": 128324,
+            "unit": "ns/op",
+            "extra": "9512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - B/op",
+            "value": 108760,
+            "unit": "B/op",
+            "extra": "9512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "9512 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets)",
+            "value": 129302,
+            "unit": "ns/op\t  108760 B/op\t      20 allocs/op",
+            "extra": "9261 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - ns/op",
+            "value": 129302,
+            "unit": "ns/op",
+            "extra": "9261 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - B/op",
+            "value": 108760,
+            "unit": "B/op",
+            "extra": "9261 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "9261 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets)",
+            "value": 128272,
+            "unit": "ns/op\t  108760 B/op\t      20 allocs/op",
+            "extra": "9022 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - ns/op",
+            "value": 128272,
+            "unit": "ns/op",
+            "extra": "9022 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - B/op",
+            "value": 108760,
+            "unit": "B/op",
+            "extra": "9022 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "9022 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets)",
+            "value": 128440,
+            "unit": "ns/op\t  108760 B/op\t      20 allocs/op",
+            "extra": "9232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - ns/op",
+            "value": 128440,
+            "unit": "ns/op",
+            "extra": "9232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - B/op",
+            "value": 108760,
+            "unit": "B/op",
+            "extra": "9232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "9232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets)",
+            "value": 129216,
+            "unit": "ns/op\t  108760 B/op\t      20 allocs/op",
+            "extra": "9123 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - ns/op",
+            "value": 129216,
+            "unit": "ns/op",
+            "extra": "9123 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - B/op",
+            "value": 108760,
+            "unit": "B/op",
+            "extra": "9123 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkUnresolvedCommentBadges (review/internal/tui/widgets) - allocs/op",
+            "value": 20,
+            "unit": "allocs/op",
+            "extra": "9123 times\n4 procs"
           }
         ]
       }
