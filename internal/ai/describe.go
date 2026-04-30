@@ -274,6 +274,7 @@ func fallbackDescription(diff string) string {
 	files := 0
 	adds := 0
 	dels := 0
+	changed := changedFileSummaries(diff)
 
 	for line := range strings.SplitSeq(diff, "\n") {
 		if strings.HasPrefix(line, "diff --git ") {
@@ -289,12 +290,76 @@ func fallbackDescription(diff string) string {
 		}
 	}
 
-	return fmt.Sprintf(
-		"## Summary\n\nUpdates %d file(s), with %d additions and %d deletions.\n\n## Testing\n\nNot specified.\n",
+	var summary strings.Builder
+	_, _ = fmt.Fprintf(
+		&summary,
+		"Updates %d file(s), with %d additions and %d deletions.",
 		files,
 		adds,
 		dels,
 	)
+	if len(changed) > 0 {
+		_, _ = fmt.Fprintf(&summary, "\n\nChanged files:\n")
+		for _, file := range changed {
+			_, _ = fmt.Fprintf(&summary, "- %s", file.Path)
+			if len(file.Hunks) > 0 {
+				_, _ = fmt.Fprintf(&summary, ": %s", strings.Join(file.Hunks, "; "))
+			}
+			_, _ = summary.WriteString("\n")
+		}
+	}
+
+	return fmt.Sprintf(
+		"## Summary\n\n%s\n\n## Testing\n\nNot specified.\n",
+		summary.String(),
+	)
+}
+
+type changedFileSummary struct {
+	Path  string
+	Hunks []string
+}
+
+func changedFileSummaries(diff string) []changedFileSummary {
+	const maxHunksPerFile = 3
+
+	out := []changedFileSummary{}
+	for line := range strings.SplitSeq(diff, "\n") {
+		if strings.HasPrefix(line, "diff --git ") {
+			parts := strings.Fields(line)
+			path := ""
+			if len(parts) >= 4 {
+				path = strings.TrimPrefix(parts[3], "b/")
+			}
+			out = append(out, changedFileSummary{Path: path})
+
+			continue
+		}
+
+		if len(out) == 0 || !strings.HasPrefix(line, "@@") {
+			continue
+		}
+
+		file := &out[len(out)-1]
+		if len(file.Hunks) >= maxHunksPerFile {
+			continue
+		}
+
+		if hunk := hunkContext(line); hunk != "" {
+			file.Hunks = append(file.Hunks, hunk)
+		}
+	}
+
+	return out
+}
+
+func hunkContext(line string) string {
+	end := strings.LastIndex(line, "@@")
+	if end <= 1 || end+2 >= len(line) {
+		return ""
+	}
+
+	return strings.TrimSpace(line[end+2:])
 }
 
 func truncate(s string, limit int) string {
