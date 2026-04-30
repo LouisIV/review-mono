@@ -41,3 +41,60 @@ func TestFallbackDescriptionIncludesChangedFileContext(t *testing.T) {
 		}
 	}
 }
+
+func TestFallbackDescriptionLimitsChangedFileContext(t *testing.T) {
+	t.Parallel()
+
+	lines := []string{}
+	for i := 1; i <= 24; i++ {
+		lines = append(
+			lines,
+			"diff --git a/file.go b/file.go",
+			"--- a/file.go",
+			"+++ b/file.go",
+			"@@ -1,1 +1,1 @@ func changed() {",
+			"+changed",
+		)
+	}
+
+	out, err := ai.GenerateDescription("", "fallback", strings.Join(lines, "\n"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(out, "...and 4 more file(s)") {
+		t.Fatalf("fallback description did not report omitted files:\n%s", out)
+	}
+	if got := strings.Count(out, "- file.go"); got != 20 {
+		t.Fatalf("rendered %d changed file entries, want 20:\n%s", got, out)
+	}
+}
+
+func TestGeneratedDescriptionIsCapped(t *testing.T) {
+	t.Parallel()
+
+	longPath := strings.Repeat("very-long-directory-name/", 120) + "file.go"
+	lines := []string{}
+	for i := 1; i <= 20; i++ {
+		lines = append(
+			lines,
+			"diff --git a/"+longPath+" b/"+longPath,
+			"--- a/"+longPath,
+			"+++ b/"+longPath,
+			"@@ -1,1 +1,1 @@ "+strings.Repeat("long hunk context ", 40),
+			"+changed",
+		)
+	}
+
+	out, err := ai.GenerateDescription("", "fallback", strings.Join(lines, "\n"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(out) > 4000 {
+		t.Fatalf("description length = %d, want <= 4000", len(out))
+	}
+	if !strings.Contains(out, "[description truncated]") {
+		t.Fatalf("description missing truncation marker:\n%s", out)
+	}
+}
