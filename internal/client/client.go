@@ -20,14 +20,29 @@ type Client struct {
 	HTTP    *http.Client
 }
 
+type HealthInfo struct {
+	OK      bool   `json:"ok"`
+	Version string `json:"version"`
+	BuildID string `json:"build_id"`
+	PID     int    `json:"pid"`
+}
+
 func New(port int) Client {
 	return Client{BaseURL: fmt.Sprintf("http://127.0.0.1:%d", port), HTTP: &http.Client{Timeout: 30 * time.Second}}
 }
 
 func (c Client) Health() error {
-	var out map[string]any
+	_, err := c.HealthInfo()
 
-	return c.do(http.MethodGet, "/health", nil, &out)
+	return err
+}
+
+func (c Client) HealthInfo() (HealthInfo, error) {
+	var out HealthInfo
+
+	err := c.do(http.MethodGet, "/health", nil, &out)
+
+	return out, err
 }
 
 func (c Client) Open(repo, base string) (models.Session, error) {

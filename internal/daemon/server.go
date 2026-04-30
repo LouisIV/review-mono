@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"review/internal/buildinfo"
 	"review/internal/config"
 	"review/internal/events"
 	"review/internal/git"
@@ -32,6 +34,8 @@ type Server struct {
 }
 
 func New(cfg config.Config) *Server {
+	_ = buildinfo.Current()
+
 	s := &Server{
 		cfg:         cfg,
 		bus:         events.NewBus(),
@@ -66,7 +70,12 @@ func (s *Server) routes() {
 }
 
 func (s *Server) health(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "version": "0.1.0"})
+	info := buildinfo.Current()
+	writeJSON(
+		w,
+		http.StatusOK,
+		map[string]any{"ok": true, "version": info.Version, "build_id": info.BuildID, "pid": os.Getpid()},
+	)
 }
 
 func (s *Server) status(w http.ResponseWriter, _ *http.Request) {

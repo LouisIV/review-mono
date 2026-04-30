@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"review/internal/buildinfo"
 	"review/internal/client"
 	"review/internal/config"
 	"review/internal/git"
@@ -83,64 +84,83 @@ func isHelpArg(arg string) bool {
 
 func ensureDaemon(port int) error {
 	c := client.New(port)
-	if c.Health() == nil {
-		return nil
-	}
+	if info, err := c.HealthInfo(); err == nil {
+		if daemonCompatible(info, buildinfo.Current()) {
+			return nil
+		}
 
-	if _, err := startDaemon(port); err != nil {
+		if err := restartDaemon(port, info); err != nil {
+			return err
+		}
+	} else if err := startDaemon(port); err != nil {
 		return err
 	}
 
+	return waitForCompatibleDaemon(c)
+}
+
+func daemonCompatible(info client.HealthInfo, current buildinfo.Identity) bool {
+	if !info.OK || info.Version != current.Version {
+		return false
+	}
+	if current.BuildID == "" {
+		return true
+	}
+
+	return info.BuildID == current.BuildID
+}
+
+func restartDaemon(port int, info client.HealthInfo) error {
+	pid := info.PID
+	if pid == 0 {
+		var err error
+		pid, err = readPID()
+		if err != nil {
+			return fmt.Errorf("daemon build differs from CLI, but could not find daemon pid to restart: %w", err)
+		}
+	}
+
+	if err := terminateDaemon(pid); err != nil {
+		return fmt.Errorf("daemon build differs from CLI, but restart failed: %w", err)
+	}
+
+	c := client.New(port)
+	deadline := time.Now().Add(5 * time.Second)
+	stopped := false
+	for time.Now().Before(deadline) {
+		if c.Health() != nil {
+			stopped = true
+			break
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+	if !stopped {
+		return errors.New("daemon build differs from CLI, but the running daemon did not stop")
+	}
+
+	if err := startDaemon(port); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func waitForCompatibleDaemon(c client.Client) error {
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
-		if c.Health() == nil {
+		info, err := c.HealthInfo()
+		if err == nil && daemonCompatible(info, buildinfo.Current()) {
 			return nil
 		}
 
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	return errors.New("daemon did not become healthy")
+	return errors.New("daemon did not become healthy with the current CLI build")
 }
 
-func startDaemon(port int) (int, error) {
-	exe, err := os.Executable()
-	if err != nil {
-		return 0, err
-	}
-
-	dir := config.ConfigDir()
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return 0, err
-	}
-
-	//nolint:gosec // Log path is scoped under the user config directory.
-	logFile, err := os.OpenFile(filepath.Join(dir, "daemon.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
-	if err != nil {
-		return 0, err
-	}
-
-	//nolint:gosec // Starts the current review executable as its own daemon process.
-	cmd := exec.CommandContext(context.Background(), exe, "daemon", "run", "--port", strconv.Itoa(port))
-	cmd.Stdout = logFile
-
-	cmd.Stderr = logFile
-	if err := cmd.Start(); err != nil {
-		return 0, err
-	}
-
-	_ = os.WriteFile(filepath.Join(dir, "daemon.pid"), []byte(strconv.Itoa(cmd.Process.Pid)), 0o600)
-	pid := cmd.Process.Pid
-
-	return pid, cmd.Process.Release()
-}
-
-func stopDaemon(jsonOut bool) error {
-	pid, err := readPID()
-	if err != nil {
-		return err
-	}
-
+func terminateDaemon(pid int) error {
 	proc, err := os.FindProcess(pid)
 	if err != nil {
 		return err
@@ -151,6 +171,50 @@ func stopDaemon(jsonOut bool) error {
 	}
 
 	_ = os.Remove(filepath.Join(config.ConfigDir(), "daemon.pid"))
+
+	return nil
+}
+
+func startDaemon(port int) error {
+	exe, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	dir := config.ConfigDir()
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+
+	//nolint:gosec // Log path is scoped under the user config directory.
+	logFile, err := os.OpenFile(filepath.Join(dir, "daemon.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+
+	//nolint:gosec // Starts the current review executable as its own daemon process.
+	cmd := exec.CommandContext(context.Background(), exe, "daemon", "run", "--port", strconv.Itoa(port))
+	cmd.Stdout = logFile
+
+	cmd.Stderr = logFile
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	_ = os.WriteFile(filepath.Join(dir, "daemon.pid"), []byte(strconv.Itoa(cmd.Process.Pid)), 0o600)
+
+	return cmd.Process.Release()
+}
+
+func stopDaemon(jsonOut bool) error {
+	pid, err := readPID()
+	if err != nil {
+		return err
+	}
+
+	if err := terminateDaemon(pid); err != nil {
+		return err
+	}
 
 	if jsonOut {
 		printJSON(map[string]any{"stopped": true, "pid": pid})
