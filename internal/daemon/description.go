@@ -4,9 +4,11 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"strings"
 
 	"review/internal/ai"
 	"review/internal/git"
+	"review/internal/hash"
 	"review/internal/models"
 	"review/internal/store"
 )
@@ -87,9 +89,11 @@ func (s *Server) generateDescription(
 	raw, err := repo.RawDiff(session.Base)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
-
 		return
 	}
+
+	// Augment diff with structural skeletons for supported file types
+	raw = augmentWithSkeletons(raw)
 
 	provider := s.cfg.AIProvider
 	if req.Provider != "" {
@@ -112,4 +116,49 @@ func (s *Server) generateDescription(
 
 	s.bus.Publish(models.Event{Event: "description_updated", SessionID: session.ID})
 	writeJSON(w, http.StatusOK, desc)
+}
+
+// augmentWithSkeletons prepends structural skeletons for each file in the diff.
+// This gives the AI context about the code structure beyond raw line-level changes.
+func augmentWithSkeletons(rawDiff string) string {
+	// Extract file paths from the diff
+	type fileInfo struct {
+		path     string
+		skeleton string
+	}
+	var files []fileInfo
+	seen := make(map[string]bool)
+
+	for _, line := range strings.Split(rawDiff, "\n") {
+		if !strings.HasPrefix(line, "diff --git a/") {
+			continue
+		}
+		parts := strings.Fields(line)
+		if len(parts) < 4 {
+			continue
+		}
+		path := strings.TrimPrefix(parts[3], "b/")
+		if path == "" || path == "/dev/null" || seen[path] {
+			continue
+		}
+		seen[path] = true
+
+		if summary := hash.SkeletonSummary(path); summary != "" {
+			files = append(files, fileInfo{path: path, skeleton: summary})
+		}
+	}
+
+	if len(files) == 0 {
+		return rawDiff
+	}
+
+	var b strings.Builder
+	b.WriteString("## File Structure Summary\n\n")
+	for _, f := range files {
+		b.WriteString(f.skeleton)
+		b.WriteString("\n")
+	}
+	b.WriteString("---\n\n")
+	b.WriteString(rawDiff)
+	return b.String()
 }
