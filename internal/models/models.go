@@ -28,6 +28,8 @@ type Comment struct {
 	File       string     `json:"file"`
 	Line       int        `json:"line,omitempty"`
 	Lines      []int      `json:"lines,omitempty"`
+	Anchor     string     `json:"anchor,omitempty"`   // hash anchor for stable line reference
+	EndAnchor  string     `json:"end_anchor,omitempty"` // end of anchored range
 	Body       string     `json:"body"`
 	Author     string     `json:"author"`
 	Resolved   bool       `json:"resolved"`

@@ -33,24 +33,32 @@ func commentCmd(args []string, g globals) error {
 func commentAdd(args []string, g globals) error {
 	if len(args) > 0 && isHelpArg(args[0]) {
 		commentAddUsage()
-
 		return nil
 	}
 
 	author := models.AuthorHuman
+	anchor := ""
+	endAnchor := ""
 	pos := []string{}
 
 	for i := 0; i < len(args); i++ {
-		if args[i] == "--author" && i+1 < len(args) {
+		switch {
+		case args[i] == "--author" && i+1 < len(args):
 			author = args[i+1]
 			i++
-		} else {
+		case args[i] == "--anchor" && i+1 < len(args):
+			anchor = args[i+1]
+			i++
+		case args[i] == "--end-anchor" && i+1 < len(args):
+			endAnchor = args[i+1]
+			i++
+		default:
 			pos = append(pos, args[i])
 		}
 	}
 
 	if len(pos) < 2 {
-		return errors.New("usage: review comment add file:line body")
+		return errors.New("usage: review comment add [--anchor <word>] [--end-anchor <word>] file:line body")
 	}
 
 	file, line, err := parseLocation(pos[0])
@@ -66,7 +74,14 @@ func commentAdd(args []string, g globals) error {
 	comment, err := c.AddComment(
 		repo.Path,
 		session,
-		models.Comment{File: file, Line: line, Body: strings.Join(pos[1:], " "), Author: author},
+		models.Comment{
+			File:      file,
+			Line:      line,
+			Anchor:    anchor,
+			EndAnchor: endAnchor,
+			Body:      strings.Join(pos[1:], " "),
+			Author:    author,
+		},
 	)
 	if err != nil {
 		return err
@@ -75,7 +90,11 @@ func commentAdd(args []string, g globals) error {
 	if g.json {
 		printJSON(comment)
 	} else {
-		fmt.Printf("Added comment %s on %s:%d\n", comment.ID, comment.File, comment.Line)
+		if anchor != "" {
+			fmt.Printf("Added comment %s on %s (%s)\n", comment.ID, comment.File, anchor)
+		} else {
+			fmt.Printf("Added comment %s on %s:%d\n", comment.ID, comment.File, comment.Line)
+		}
 	}
 
 	return nil

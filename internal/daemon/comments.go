@@ -52,11 +52,13 @@ func (s *Server) addComment(
 	comments []models.Comment,
 ) {
 	var req struct {
-		File   string `json:"file"`
-		Line   int    `json:"line"`
-		Lines  []int  `json:"lines"`
-		Body   string `json:"body"`
-		Author string `json:"author"`
+		File      string `json:"file"`
+		Line      int    `json:"line"`
+		Lines     []int  `json:"lines"`
+		Anchor    string `json:"anchor"`
+		EndAnchor string `json:"end_anchor"`
+		Body      string `json:"body"`
+		Author    string `json:"author"`
 	}
 	err := readJSON(r, &req)
 	if err != nil {
@@ -80,6 +82,8 @@ func (s *Server) addComment(
 		File:      req.File,
 		Line:      req.Line,
 		Lines:     req.Lines,
+		Anchor:    req.Anchor,
+		EndAnchor: req.EndAnchor,
 		Body:      req.Body,
 		Author:    req.Author,
 		CreatedAt: time.Now().UTC(),
