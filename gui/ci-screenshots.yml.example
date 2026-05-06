@@ -1,0 +1,152 @@
+# Review GUI Screenshots — Visual Diff on PR
+#
+# Captures full-page screenshots of the Review GUI (via standalone demo HTML)
+# on both the PR branch and its base branch, then posts a before/after comment
+# on the pull request.
+#
+# NOTE: This file lives at gui/ci-screenshots.yml.example because the PAT used
+# to create it may lack workflow scope. Copy it into .github/workflows/ to activate.
+
+name: GUI Screenshots
+
+on:
+  pull_request:
+    paths:
+      - 'gui/**'
+      - '.github/workflows/gui-screenshots.yml'
+
+jobs:
+  screenshot-diff:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      # ── PR checkout ────────────────────────────────────────────────
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          path: pr
+
+      - name: Get base SHA
+        id: base-sha
+        working-directory: pr
+        run: |
+          BASE_SHA=$(git merge-base HEAD origin/${{ github.base_ref }} || git rev-parse origin/${{ github.base_ref }})
+          echo "sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+
+      # ── Cache base screenshot by base SHA ─────────────────────────
+      - name: Cache base screenshot
+        id: cache-base
+        uses: actions/cache@v4
+        with:
+          path: base/gui-screenshot.png
+          key: gui-screenshot-${{ steps.base-sha.outputs.sha }}
+
+      # ── Base checkout (only if cache miss) ────────────────────────
+      - name: Checkout base branch
+        if: steps.cache-base.outputs.cache-hit != 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      # ── Setup runtimes ────────────────────────────────────────────
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # ── Install Playwright ────────────────────────────────────────
+      - name: Install Playwright
+        run: |
+          npm install playwright
+          npx playwright install chromium --with-deps
+
+      # ── PR screenshot ─────────────────────────────────────────────
+      - name: Capture PR screenshot
+        working-directory: pr
+        run: |
+          node gui/scripts/screenshot.mjs
+          mv gui-screenshot.png ../pr-screenshot.png
+
+      # ── Base screenshot (skip if cached) ──────────────────────────
+      - name: Capture base screenshot
+        if: steps.cache-base.outputs.cache-hit != 'true'
+        working-directory: base
+        run: |
+          node gui/scripts/screenshot.mjs
+          # Keep the file at base/gui-screenshot.png for caching
+
+      # ── Upload to catbox.moe ──────────────────────────────────────
+      - name: Upload screenshots to catbox
+        id: upload
+        run: |
+          # Upload PR screenshot
+          PR_URL=$(curl -s -F "reqtype=fileupload" -F "fileToUpload=@pr-screenshot.png" https://catbox.moe/user/api.php)
+          echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
+          echo "PR screenshot: $PR_URL"
+
+          # Upload base screenshot
+          BASE_URL=$(curl -s -F "reqtype=fileupload" -F "fileToUpload=@base/gui-screenshot.png" https://catbox.moe/user/api.php)
+          echo "base_url=$BASE_URL" >> "$GITHUB_OUTPUT"
+          echo "Base screenshot: $BASE_URL"
+
+      # ── Post / update PR comment ──────────────────────────────────
+      - name: Post visual diff comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- gui-screenshots -->';
+            const body = `${marker}
+            ## 🖼️ GUI Screenshots
+
+            | | Screenshot |
+            | --- | --- |
+            | **Base** (${context.payload.pull_request.base.ref}) | ![base](${process.env.BASE_URL}) |
+            | **PR** (${context.payload.pull_request.head.ref}) | ![pr](${process.env.PR_URL}) |
+
+            <details>
+            <summary>How to read this</summary>
+
+            - The **Base** image shows the current state on the target branch.
+            - The **PR** image shows the proposed changes.
+            - These are captured from \`gui/screenshot-demo.html\` — update that file if you change the GUI layout.
+            </details>
+            `;
+
+            // Look for an existing comment with our marker
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              console.log(`Updated comment #${existing.id}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+              console.log('Created new comment');
+            }
+        env:
+          BASE_URL: ${{ steps.upload.outputs.base_url }}
+          PR_URL: ${{ steps.upload.outputs.pr_url }}

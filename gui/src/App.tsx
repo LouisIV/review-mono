@@ -1,28 +1,31 @@
-import { useState } from "react";
-import SettingsPage from "./pages/SettingsPage";
-import DaemonPage from "./pages/DaemonPage";
-
-type Tab = "daemons" | "settings";
+import { Server, Settings } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import DaemonPage from "@/pages/DaemonPage";
+import SettingsPage from "@/pages/SettingsPage";
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>("daemons");
-
   return (
-    <div className="flex flex-col h-screen">
-      <nav className="flex border-b bg-white px-4 gap-1">
-        <button onClick={() => setTab("daemons")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "daemons" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
-          Daemons
-        </button>
-        <button onClick={() => setTab("settings")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "settings" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
-          Settings
-        </button>
-      </nav>
-      <main className="flex-1 overflow-hidden">
-        {tab === "daemons" && <DaemonPage />}
-        {tab === "settings" && <SettingsPage />}
-      </main>
+    <div className="flex flex-col h-screen bg-background">
+      <Tabs defaultValue="daemons" className="flex flex-col h-full">
+        <header className="border-b px-4 py-2">
+          <TabsList>
+            <TabsTrigger value="daemons">
+              <Server className="h-4 w-4" />
+              Daemons
+            </TabsTrigger>
+            <TabsTrigger value="settings">
+              <Settings className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
+        </header>
+        <TabsContent value="daemons" className="flex-1 overflow-hidden m-0">
+          <DaemonPage />
+        </TabsContent>
+        <TabsContent value="settings" className="flex-1 overflow-hidden m-0">
+          <SettingsPage />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
