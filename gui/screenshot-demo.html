@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Review GUI - Screenshot Demo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          background: 'hsl(0, 0%, 100%)',
+          foreground: 'hsl(0, 0%, 3.9%)',
+          card: 'hsl(0, 0%, 100%)',
+          'card-foreground': 'hsl(0, 0%, 3.9%)',
+          primary: { DEFAULT: 'hsl(0, 0%, 9%)', foreground: 'hsl(0, 0%, 98%)' },
+          secondary: { DEFAULT: 'hsl(0, 0%, 96.1%)', foreground: 'hsl(0, 0%, 9%)' },
+          muted: { DEFAULT: 'hsl(0, 0%, 96.1%)', foreground: 'hsl(0, 0%, 45.1%)' },
+          accent: { DEFAULT: 'hsl(0, 0%, 96.1%)', foreground: 'hsl(0, 0%, 9%)' },
+          destructive: { DEFAULT: 'hsl(0, 84.2%, 60.2%)', foreground: 'hsl(0, 0%, 98%)' },
+          border: 'hsl(0, 0%, 89.8%)',
+          input: 'hsl(0, 0%, 89.8%)',
+          ring: 'hsl(0, 0%, 3.9%)',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .tab-active { border-bottom: 2px solid #171717; color: #0a0a0a; }
+  .tab-inactive { color: #737373; }
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+  .status-dot-green { background-color: #22c55e; }
+  .status-dot-gray { background-color: #9ca3af; }
+  .diff-add { background-color: #dcfce7; color: #166534; }
+  .diff-del { background-color: #fee2e2; color: #991b1b; }
+  .comment-unresolved { border-color: #fde68a; background-color: #fefce8; }
+  .comment-resolved { border-color: #e5e7eb; background-color: #f9fafb; }
+</style>
+</head>
+<body class="bg-background text-foreground h-screen flex flex-col">
+  <!-- Tab bar -->
+  <header class="border-b px-4 py-2">
+    <div class="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+      <button class="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium bg-background text-foreground shadow-sm gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+        Daemons
+      </button>
+      <button class="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        Settings
+      </button>
+    </div>
+  </header>
+
+  <!-- Main layout: sidebar + content -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Sidebar -->
+    <div class="w-72 border-r bg-muted/50 p-4 flex flex-col gap-3 overflow-y-auto shrink-0">
+      <!-- Daemon heading -->
+      <div class="flex items-center justify-between">
+        <h2 class="font-bold text-lg">Daemons</h2>
+        <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium border border-input bg-background shadow-sm hover:bg-accent h-8 px-3 text-xs">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+          Refresh
+        </button>
+      </div>
+
+      <!-- Daemon 1: local (active/connected) -->
+      <button class="text-left p-3 rounded-lg border text-sm border-primary bg-primary/5 shadow-sm">
+        <div class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+          <span class="font-medium">localhost:9178</span>
+          <span class="status-dot status-dot-green ml-auto"></span>
+        </div>
+        <div class="text-xs text-muted-foreground mt-1">v1.2.3 — pid 48291</div>
+        <div class="text-xs text-muted-foreground">local</div>
+      </button>
+
+      <!-- Daemon 2: remote (disconnected) -->
+      <button class="text-left p-3 rounded-lg border text-sm border-border hover:bg-background hover:shadow-sm">
+        <div class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+          <span class="font-medium">staging-box:9178</span>
+          <span class="status-dot status-dot-gray ml-auto"></span>
+        </div>
+        <div class="text-xs text-muted-foreground mt-1">v1.2.1 — pid 1204</div>
+        <div class="text-xs text-muted-foreground">ssh</div>
+      </button>
+
+      <!-- Separator + repo path + sessions -->
+      <div class="border-t my-1"></div>
+
+      <div class="space-y-2">
+        <label class="text-xs font-medium">Repo path</label>
+        <div class="flex gap-1.5">
+          <input value="/home/dev/review-mono" placeholder="e.g. /home/user/project" class="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-sm" readonly>
+          <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-8 px-3 text-xs">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 w-full">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+          Browse Sessions
+        </button>
+
+        <!-- Session items -->
+        <button class="w-full text-left p-2.5 rounded-lg border text-xs border-primary bg-primary/5">
+          <div class="font-medium flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+            feat/add-auth → main
+          </div>
+          <div class="mt-0.5">
+            <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold text-[10px] px-1.5 py-0 border-transparent bg-green-600 text-white">approved</span>
+          </div>
+        </button>
+
+        <button class="w-full text-left p-2.5 rounded-lg border text-xs border-border hover:bg-background">
+          <div class="font-medium flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+            fix/login-redirect → main
+          </div>
+          <div class="mt-0.5">
+            <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold text-[10px] px-1.5 py-0 border-transparent bg-destructive text-destructive-foreground">changes_requested</span>
+          </div>
+        </button>
+
+        <button class="w-full text-left p-2.5 rounded-lg border text-xs border-border hover:bg-background">
+          <div class="font-medium flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+            chore/update-deps → develop
+          </div>
+          <div class="mt-0.5">
+            <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold text-[10px] px-1.5 py-0 border-transparent bg-primary text-primary-foreground">in_review</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="flex-1 p-6 overflow-y-auto bg-background">
+      <!-- Session header card -->
+      <div class="rounded-lg border bg-card text-card-foreground shadow-sm mb-4">
+        <div class="p-6 pb-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-semibold leading-none tracking-tight flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                feat/add-auth → main
+              </h3>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-green-600 text-white">approved</span>
+                <span class="text-xs text-muted-foreground">Updated: 5/5/2026, 2:30:00 PM</span>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium bg-primary text-primary-foreground shadow hover:bg-primary/90 h-8 px-3 text-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                Approve
+              </button>
+              <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 h-8 px-3 text-xs">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                Request Changes
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="p-6 pt-0 pb-3">
+          <p class="text-sm text-primary">✓ Approved!</p>
+        </div>
+      </div>
+
+      <!-- Commits section -->
+      <div class="mb-4">
+        <h4 class="text-sm font-medium mb-2 flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+          Commits (3)
+        </h4>
+        <div class="space-y-1">
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm border-muted">
+            <div class="p-2.5 text-xs flex items-center gap-3">
+              <code class="font-mono text-primary bg-muted px-1.5 py-0.5 rounded text-[11px]">a1b2c3d</code>
+              <span class="flex-1 truncate">Add OAuth2 authentication flow with PKCE</span>
+              <span class="text-muted-foreground shrink-0">alice</span>
+            </div>
+          </div>
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm border-muted">
+            <div class="p-2.5 text-xs flex items-center gap-3">
+              <code class="font-mono text-primary bg-muted px-1.5 py-0.5 rounded text-[11px]">e4f5a6b</code>
+              <span class="flex-1 truncate">Add session token refresh logic</span>
+              <span class="text-muted-foreground shrink-0">alice</span>
+            </div>
+          </div>
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm border-muted">
+            <div class="p-2.5 text-xs flex items-center gap-3">
+              <code class="font-mono text-primary bg-muted px-1.5 py-0.5 rounded text-[11px]">c7d8e9f</code>
+              <span class="flex-1 truncate">Refactor middleware to use new auth helpers</span>
+              <span class="text-muted-foreground shrink-0">alice</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Files changed section -->
+      <div class="mb-4">
+        <h4 class="text-sm font-medium mb-2 flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+          Files Changed (5)
+        </h4>
+        <div class="space-y-1">
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm border-muted hover:border-primary/50 hover:bg-accent/50 cursor-pointer">
+            <div class="p-2.5 text-xs flex items-center justify-between">
+              <code class="font-mono">src/auth/oauth.ts</code>
+              <div class="flex gap-2 shrink-0">
+                <span class="text-green-600 font-medium">+142</span>
+                <span class="text-red-600 font-medium">-3</span>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm border-muted hover:border-primary/50 hover:bg-accent/50 cursor-pointer">
+            <div class="p-2.5 text-xs flex items-center justify-between">
+              <code class="font-mono">src/auth/tokens.ts</code>
+              <div class="flex gap-2 shrink-0">
+                <span class="text-green-600 font-medium">+87</span>
+                <span class="text-red-600 font-medium">-12</span>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm border-muted hover:border-primary/50 hover:bg-accent/50 cursor-pointer">
+            <div class="p-2.5 text-xs flex items-center justify-between">
+              <code class="font-mono">src/middleware/auth.ts</code>
+              <div class="flex gap-2 shrink-0">
+                <span class="text-green-600 font-medium">+34</span>
+                <span class="text-red-600 font-medium">-56</span>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm border-muted hover:border-primary/50 hover:bg-accent/50 cursor-pointer">
+            <div class="p-2.5 text-xs flex items-center justify-between">
+              <code class="font-mono">tests/auth/oauth.test.ts</code>
+              <div class="flex gap-2 shrink-0">
+                <span class="text-green-600 font-medium">+210</span>
+                <span class="text-red-600 font-medium">-0</span>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm border-muted hover:border-primary/50 hover:bg-accent/50 cursor-pointer">
+            <div class="p-2.5 text-xs flex items-center justify-between">
+              <code class="font-mono">package.json</code>
+              <div class="flex gap-2 shrink-0">
+                <span class="text-green-600 font-medium">+2</span>
+                <span class="text-red-600 font-medium">-1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inline diff viewer -->
+      <div class="mb-4">
+        <div class="flex items-center gap-2 mb-3">
+          <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            Back to files
+          </button>
+          <code class="text-sm font-mono">src/auth/oauth.ts</code>
+          <div class="flex gap-2 ml-auto">
+            <span class="text-xs text-green-600 font-medium">+142</span>
+            <span class="text-xs text-red-600 font-medium">-3</span>
+          </div>
+        </div>
+
+        <div class="space-y-0 font-mono text-xs">
+          <!-- Hunk 1 -->
+          <div class="mb-2">
+            <div class="bg-muted text-muted-foreground px-3 py-1 rounded-t-md text-[11px]">@@ -1,5 +1,12 @@</div>
+            <div class="px-3 py-0.5 flex bg-background text-foreground">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">1</span>
+              <span class="whitespace-pre-wrap break-all">import { Router } from 'express';</span>
+            </div>
+            <div class="px-3 py-0.5 flex bg-background text-foreground">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">2</span>
+              <span class="whitespace-pre-wrap break-all">import { validateToken } from './tokens';</span>
+            </div>
+            <div class="px-3 py-0.5 flex diff-del">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">3</span>
+              <span class="whitespace-pre-wrap break-all">-import { basicAuth } from './legacy-auth';</span>
+            </div>
+            <div class="px-3 py-0.5 flex diff-add">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">3</span>
+              <span class="whitespace-pre-wrap break-all">+import { OAuth2Client } from 'google-auth-library';</span>
+            </div>
+            <div class="px-3 py-0.5 flex diff-add">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">4</span>
+              <span class="whitespace-pre-wrap break-all">+import { createPKCECodes, verifyPKCE } from './pkce';</span>
+            </div>
+            <div class="px-3 py-0.5 flex diff-add">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">5</span>
+              <span class="whitespace-pre-wrap break-all">+import { TokenStore } from './token-store';</span>
+            </div>
+            <div class="px-3 py-0.5 flex bg-background text-foreground">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">4</span>
+              <span class="whitespace-pre-wrap break-all"></span>
+            </div>
+            <div class="px-3 py-0.5 flex bg-background text-foreground">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">5</span>
+              <span class="whitespace-pre-wrap break-all">const router = Router();</span>
+            </div>
+          </div>
+
+          <!-- Hunk 2 -->
+          <div class="mb-2">
+            <div class="bg-muted text-muted-foreground px-3 py-1 rounded-t-md text-[11px]">@@ -12,4 +19,15 @@ export function setupAuth(app: Express) {</div>
+            <div class="px-3 py-0.5 flex bg-background text-foreground">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">12</span>
+              <span class="whitespace-pre-wrap break-all">  app.use('/api', validateToken);</span>
+            </div>
+            <div class="px-3 py-0.5 flex diff-del">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">13</span>
+              <span class="whitespace-pre-wrap break-all">-  app.post('/auth/login', basicAuth);</span>
+            </div>
+            <div class="px-3 py-0.5 flex diff-add">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">13</span>
+              <span class="whitespace-pre-wrap break-all">+  const oauthClient = new OAuth2Client({</span>
+            </div>
+            <div class="px-3 py-0.5 flex diff-add">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">14</span>
+              <span class="whitespace-pre-wrap break-all">+    clientId: process.env.OAUTH_CLIENT_ID,</span>
+            </div>
+            <div class="px-3 py-0.5 flex diff-add">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">15</span>
+              <span class="whitespace-pre-wrap break-all">+    clientSecret: process.env.OAUTH_CLIENT_SECRET,</span>
+            </div>
+            <div class="px-3 py-0.5 flex diff-add">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">16</span>
+              <span class="whitespace-pre-wrap break-all">+    redirectUri: `${process.env.BASE_URL}/auth/callback`,</span>
+            </div>
+            <div class="px-3 py-0.5 flex diff-add">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">17</span>
+              <span class="whitespace-pre-wrap break-all">+  });</span>
+            </div>
+            <div class="px-3 py-0.5 flex bg-background text-foreground">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">14</span>
+              <span class="whitespace-pre-wrap break-all"></span>
+            </div>
+            <div class="px-3 py-0.5 flex bg-background text-foreground">
+              <span class="w-10 text-right text-muted-foreground shrink-0 select-none mr-3">15</span>
+              <span class="whitespace-pre-wrap break-all">  app.get('/auth/callback', handleCallback);</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comments section -->
+      <div>
+        <h4 class="text-sm font-medium mb-2 flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Comments (4)
+        </h4>
+        <div class="space-y-2">
+          <!-- Unresolved comment -->
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm comment-unresolved">
+            <div class="p-3 text-xs">
+              <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium">bob</span>
+                  <span class="text-muted-foreground">src/auth/oauth.ts:47</span>
+                </div>
+                <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground h-6 text-xs px-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  Resolve
+                </button>
+              </div>
+              <p class="mt-1 text-foreground/80">Should we add rate limiting on the token refresh endpoint?</p>
+            </div>
+          </div>
+
+          <!-- Unresolved comment 2 -->
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm comment-unresolved">
+            <div class="p-3 text-xs">
+              <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium">charlie</span>
+                  <span class="text-muted-foreground">src/middleware/auth.ts:23</span>
+                </div>
+                <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground h-6 text-xs px-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  Resolve
+                </button>
+              </div>
+              <p class="mt-1 text-foreground/80">Consider extracting the token verification into a separate middleware function for testability.</p>
+            </div>
+          </div>
+
+          <!-- Resolved comment -->
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm comment-resolved">
+            <div class="p-3 text-xs">
+              <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium">bob</span>
+                  <span class="text-muted-foreground">src/auth/tokens.ts:12</span>
+                </div>
+                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold text-[10px] px-1.5 py-0 border-transparent bg-green-600 text-white">Resolved</span>
+              </div>
+              <p class="mt-1 text-foreground/80">Use `crypto.timingSafeEqual` for token comparison — done in e4f5a6b.</p>
+            </div>
+          </div>
+
+          <!-- Resolved comment 2 -->
+          <div class="rounded-lg border bg-card text-card-foreground shadow-sm comment-resolved">
+            <div class="p-3 text-xs">
+              <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium">alice</span>
+                  <span class="text-muted-foreground">package.json</span>
+                </div>
+                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold text-[10px] px-1.5 py-0 border-transparent bg-green-600 text-white">Resolved</span>
+              </div>
+              <p class="mt-1 text-foreground/80">The google-auth-library version looks good — we're already on the latest.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

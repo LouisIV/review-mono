@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review — Daemon Discovery</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .diff-add { background: #dcfce7; }
+  .diff-rem { background: #fee2e2; }
+  .diff-ctx { color: #6b7280; }
+</style>
+</head>
+<body class="bg-white h-screen flex flex-col">
+
+<!-- Tab Nav -->
+<nav class="flex border-b bg-white px-4 gap-1 flex-shrink-0">
+  <button class="px-4 py-2.5 text-sm font-medium border-b-2 border-blue-600 text-blue-600">Daemons</button>
+  <button class="px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500">Settings</button>
+</nav>
+
+<!-- Main: Sidebar + Content -->
+<div class="flex flex-1 overflow-hidden">
+
+  <!-- Sidebar -->
+  <div class="w-72 border-r bg-gray-50 p-4 flex flex-col gap-3 overflow-y-auto flex-shrink-0">
+    <div class="flex items-center justify-between">
+      <h2 class="font-bold text-base">Daemons</h2>
+      <span class="text-xs bg-blue-600 text-white px-2.5 py-1 rounded font-medium">Refresh</span>
+    </div>
+
+    <!-- Local daemon -->
+    <div class="text-left p-2.5 rounded border border-blue-500 bg-blue-50 text-sm">
+      <div class="font-medium flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+        127.0.0.1:7080
+      </div>
+      <div class="text-xs text-gray-500 mt-0.5">v0.1.0 — pid 18432</div>
+      <div class="text-xs text-gray-400 mt-0.5">local</div>
+    </div>
+
+    <!-- Remote daemon -->
+    <div class="text-left p-2.5 rounded border border-gray-200 hover:bg-white text-sm">
+      <div class="font-medium flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+        dev.example.com:7080
+      </div>
+      <div class="text-xs text-gray-500 mt-0.5">v0.1.0 — pid 9201</div>
+      <div class="text-xs text-gray-400 mt-0.5">remote · work-server</div>
+    </div>
+
+    <!-- Another remote (offline) -->
+    <div class="text-left p-2.5 rounded border border-gray-200 text-sm opacity-60">
+      <div class="font-medium flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
+        staging.lan:7080
+      </div>
+      <div class="text-xs text-gray-400 mt-0.5">no daemon found</div>
+    </div>
+
+    <!-- Repo input + session browser -->
+    <div class="mt-4 pt-4 border-t">
+      <label class="text-xs font-medium text-gray-600">Repo path</label>
+      <div class="flex gap-1.5 mt-1.5">
+        <input value="/home/louis/projects/api-server" class="flex-1 rounded border px-2.5 py-1.5 text-xs bg-white" readonly>
+        <span class="text-xs bg-gray-600 text-white px-2.5 py-1.5 rounded">Go</span>
+      </div>
+      <div class="mt-2 text-xs bg-green-600 text-white px-2.5 py-1.5 rounded text-center">Browse Sessions</div>
+
+      <!-- Session list -->
+      <div class="mt-2 text-left p-2.5 rounded border border-blue-500 bg-blue-50 text-xs">
+        <div class="font-medium">feat/oauth-flow → main</div>
+        <div class="text-gray-500 mt-0.5">in_review</div>
+      </div>
+      <div class="mt-1 text-left p-2.5 rounded border border-gray-200 hover:bg-white text-xs">
+        <div class="font-medium">fix/login-timeout → main</div>
+        <div class="text-gray-500 mt-0.5">in_review</div>
+      </div>
+      <div class="mt-1 text-left p-2.5 rounded border border-gray-200 hover:bg-white text-xs">
+        <div class="font-medium">chore/update-deps → main</div>
+        <div class="text-gray-500 mt-0.5">approved</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-1 p-5 overflow-y-auto">
+    
+    <!-- Session header -->
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h3 class="text-lg font-bold text-gray-900">feat/oauth-flow → main</h3>
+        <p class="text-sm text-gray-500">Status: <span class="text-yellow-600 font-medium">in_review</span> · Session opened 2 hours ago</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="text-xs bg-green-600 text-white px-3.5 py-2 rounded font-medium hover:bg-green-700">✓ Approve</button>
+        <button class="text-xs bg-red-600 text-white px-3.5 py-2 rounded font-medium hover:bg-red-700">✗ Request Changes</button>
+      </div>
+    </div>
+
+    <!-- Commits section -->
+    <h4 class="font-semibold text-sm text-gray-700 mb-2">Commits (4)</h4>
+    <div class="space-y-1.5 mb-5">
+      <div class="text-xs p-2.5 bg-gray-50 rounded border border-gray-100 flex items-center gap-3">
+        <span class="font-mono text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">a3f2c1d</span>
+        <span>Add OAuth token refresh logic</span>
+        <span class="text-gray-400 ml-auto">claude</span>
+        <span class="text-gray-300">2h ago</span>
+      </div>
+      <div class="text-xs p-2.5 bg-gray-50 rounded border border-gray-100 flex items-center gap-3">
+        <span class="font-mono text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">7e4b8a2</span>
+        <span>Implement PKCE challenge flow</span>
+        <span class="text-gray-400 ml-auto">claude</span>
+        <span class="text-gray-300">3h ago</span>
+      </div>
+      <div class="text-xs p-2.5 bg-gray-50 rounded border border-gray-100 flex items-center gap-3">
+        <span class="font-mono text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">b9d1f5e</span>
+        <span>Add OAuth provider configuration</span>
+        <span class="text-gray-400 ml-auto">louis</span>
+        <span class="text-gray-300">4h ago</span>
+      </div>
+      <div class="text-xs p-2.5 bg-gray-50 rounded border border-gray-100 flex items-center gap-3">
+        <span class="font-mono text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">2c8e6a0</span>
+        <span>Scaffold auth module</span>
+        <span class="text-gray-400 ml-auto">louis</span>
+        <span class="text-gray-300">5h ago</span>
+      </div>
+    </div>
+
+    <!-- Files changed -->
+    <h4 class="font-semibold text-sm text-gray-700 mb-2">Files Changed (6)</h4>
+    <div class="space-y-1 mb-5">
+      <div class="block w-full text-left text-xs p-2.5 rounded border border-blue-500 bg-blue-50">
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-blue-700">src/auth/oauth/handler.go</span>
+          <span class="flex gap-2">
+            <span class="text-green-600 font-medium">+142</span>
+            <span class="text-red-600 font-medium">-8</span>
+          </span>
+        </div>
+        <!-- Inline mini-diff for selected file -->
+        <div class="mt-2 font-mono text-xs leading-relaxed space-y-0.5">
+          <div class="diff-ctx px-2 py-0.5 rounded"><span class="text-gray-400 w-8 inline-block">142</span> func (h *Handler) RefreshToken(ctx context.Context, req *RefreshRequest) (*TokenPair, error) {</div>
+          <div class="diff-add px-2 py-0.5 rounded"><span class="text-green-700 w-8 inline-block">143</span>+  // Validate refresh token hasn't expired</div>
+          <div class="diff-add px-2 py-0.5 rounded"><span class="text-green-700 w-8 inline-block">144</span>+  if time.Now().After(req.RefreshToken.ExpiresAt) {</div>
+          <div class="diff-add px-2 py-0.5 rounded"><span class="text-green-700 w-8 inline-block">145</span>+    return nil, ErrTokenExpired</div>
+          <div class="diff-add px-2 py-0.5 rounded"><span class="text-green-700 w-8 inline-block">146</span>+  }</div>
+          <div class="diff-ctx px-2 py-0.5 rounded"><span class="text-gray-400 w-8 inline-block">147</span>   claims, err := h.validator.Validate(req.RefreshToken.Raw)</div>
+          <div class="diff-rem px-2 py-0.5 rounded"><span class="text-red-700 w-8 inline-block"></span>-  if err != nil { return nil, err }</div>
+          <div class="diff-add px-2 py-0.5 rounded"><span class="text-green-700 w-8 inline-block">148</span>+  if err != nil {</div>
+          <div class="diff-add px-2 py-0.5 rounded"><span class="text-green-700 w-8 inline-block">149</span>+    return nil, fmt.Errorf("token validation: %w", err)</div>
+          <div class="diff-add px-2 py-0.5 rounded"><span class="text-green-700 w-8 inline-block">150</span>+  }</div>
+        </div>
+      </div>
+      <div class="block w-full text-left text-xs p-2.5 rounded border border-gray-200 hover:bg-gray-50">
+        <div class="flex items-center justify-between">
+          <span class="font-mono">src/auth/oauth/provider.go</span>
+          <span class="flex gap-2">
+            <span class="text-green-600">+87</span>
+            <span class="text-red-600">-3</span>
+          </span>
+        </div>
+      </div>
+      <div class="block w-full text-left text-xs p-2.5 rounded border border-gray-200 hover:bg-gray-50">
+        <div class="flex items-center justify-between">
+          <span class="font-mono">src/auth/oauth/pkce.go</span>
+          <span class="text-green-600">+64 (new)</span>
+        </div>
+      </div>
+      <div class="block w-full text-left text-xs p-2.5 rounded border border-gray-200 hover:bg-gray-50">
+        <div class="flex items-center justify-between">
+          <span class="font-mono">src/auth/middleware.go</span>
+          <span class="flex gap-2">
+            <span class="text-green-600">+12</span>
+            <span class="text-red-600">-5</span>
+          </span>
+        </div>
+      </div>
+      <div class="block w-full text-left text-xs p-2.5 rounded border border-gray-200 hover:bg-gray-50">
+        <div class="flex items-center justify-between">
+          <span class="font-mono">tests/oauth_integration_test.go</span>
+          <span class="text-green-600">+218 (new)</span>
+        </div>
+      </div>
+      <div class="block w-full text-left text-xs p-2.5 rounded border border-gray-200 hover:bg-gray-50">
+        <div class="flex items-center justify-between">
+          <span class="font-mono">go.mod</span>
+          <span class="flex gap-2">
+            <span class="text-green-600">+3</span>
+            <span class="text-red-600">-1</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comments section -->
+    <h4 class="font-semibold text-sm text-gray-700 mb-2">Comments (3 open)</h4>
+    <div class="space-y-2">
+      <div class="p-3 rounded border border-yellow-200 bg-yellow-50 text-xs">
+        <div class="flex justify-between items-start">
+          <span class="font-medium text-gray-800">louis</span>
+          <span class="text-gray-400 font-mono">src/auth/oauth/handler.go:144</span>
+        </div>
+        <p class="mt-1.5 text-gray-700">Should we use a constant for the expiration check window instead of comparing directly to time.Now()? Makes testing easier.</p>
+        <span class="inline-block mt-2 text-blue-600 cursor-pointer hover:underline font-medium">Resolve</span>
+      </div>
+      <div class="p-3 rounded border border-yellow-200 bg-yellow-50 text-xs">
+        <div class="flex justify-between items-start">
+          <span class="font-medium text-gray-800">louis</span>
+          <span class="text-gray-400 font-mono">src/auth/oauth/pkce.go</span>
+        </div>
+        <p class="mt-1.5 text-gray-700">Nit: the challenge verification could use constant-time comparison to prevent timing attacks.</p>
+        <span class="inline-block mt-2 text-blue-600 cursor-pointer hover:underline font-medium">Resolve</span>
+      </div>
+      <div class="p-3 rounded border border-yellow-200 bg-yellow-50 text-xs">
+        <div class="flex justify-between items-start">
+          <span class="font-medium text-gray-800">claude</span>
+          <span class="text-gray-400 font-mono">src/auth/oauth/handler.go</span>
+        </div>
+        <p class="mt-1.5 text-gray-700">Good catch on the token validation — added better error wrapping. See line 148-150.</p>
+        <span class="inline-block mt-2 text-blue-600 cursor-pointer hover:underline font-medium">Resolve</span>
+      </div>
+      <div class="p-3 rounded border border-gray-200 bg-gray-50 text-xs">
+        <div class="flex justify-between items-start">
+          <span class="font-medium text-gray-800">louis</span>
+          <span class="text-gray-400 font-mono">tests/oauth_integration_test.go:42</span>
+        </div>
+        <p class="mt-1.5 text-gray-700">Great test coverage. Ship it.</p>
+        <span class="inline-block mt-2 text-green-600 font-medium">✓ Resolved</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
